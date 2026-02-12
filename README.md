@@ -4,6 +4,9 @@ A simple task management application built with React, TypeScript, and Tailwind 
 
 ## Features
 
+
+
+
 - **Task Management** - Create, edit, and delete tasks with priorities, statuses, due dates, and tags
 - **Categories** - Organize tasks into custom categories with color coding
 - **Team Management** - Add team members and assign tasks
