@@ -1,117 +1,125 @@
-import React, { useState, useMemo } from 'react'
-import { useLanguage } from '../hooks/useLanguage'
-import { formatDate, isOverdue } from '../utils/helpers'
+import React, { useState, useMemo } from 'react';
+import { useLanguage } from '../hooks/useLanguage';
+import { formatDate, isOverdue } from '../utils/helpers';
+import { CalendarProps, Task, Priority, Status } from '../types';
 
-export default function Calendar({ tasks, categories, teamMembers, onTaskClick, onDateClick }) {
-  const { t } = useLanguage()
-  const [currentDate, setCurrentDate] = useState(new Date())
-  const [selectedDate, setSelectedDate] = useState(null)
+interface DayInfo {
+  date: Date | null;
+  isPadding: boolean;
+  isToday?: boolean;
+  isPast?: boolean;
+}
 
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
+export default function Calendar({ tasks, categories, teamMembers, onTaskClick, onDateClick }: CalendarProps) {
+  const { t } = useLanguage();
+  const [currentDate, setCurrentDate] = useState<Date>(new Date());
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
 
   // Generate year options (current year ± 5 years)
-  const currentYear = new Date().getFullYear()
-  const yearOptions = []
+  const currentYear = new Date().getFullYear();
+  const yearOptions: number[] = [];
   for (let y = currentYear - 5; y <= currentYear + 5; y++) {
-    yearOptions.push(y)
+    yearOptions.push(y);
   }
 
   const daysInMonth = useMemo(() => {
-    const year = currentDate.getFullYear()
-    const month = currentDate.getMonth()
-    const firstDay = new Date(year, month, 1)
-    const lastDay = new Date(year, month + 1, 0)
-    const daysArray = []
+    const year = currentDate.getFullYear();
+    const month = currentDate.getMonth();
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+    const daysArray: DayInfo[] = [];
 
-    const startPadding = firstDay.getDay()
+    const startPadding = firstDay.getDay();
     for (let i = 0; i < startPadding; i++) {
-      daysArray.push({ date: null, isPadding: true })
+      daysArray.push({ date: null, isPadding: true });
     }
 
     for (let day = 1; day <= lastDay.getDate(); day++) {
-      const dateObj = new Date(year, month, day)
-      const todayObj = new Date()
-      todayObj.setHours(0, 0, 0, 0)
+      const dateObj = new Date(year, month, day);
+      const todayObj = new Date();
+      todayObj.setHours(0, 0, 0, 0);
       daysArray.push({
         date: dateObj,
         isPadding: false,
         isToday: dateObj.getTime() === todayObj.getTime(),
         isPast: dateObj < todayObj
-      })
+      });
     }
 
-    return daysArray
-  }, [currentDate])
+    return daysArray;
+  }, [currentDate]);
 
   const tasksByDate = useMemo(() => {
-    const map = {}
+    const map: Record<string, Task[]> = {};
     tasks.forEach(task => {
       if (task.dueDate) {
-        const dateKey = new Date(task.dueDate).toDateString()
-        if (!map[dateKey]) map[dateKey] = []
-        map[dateKey].push(task)
+        const dateKey = new Date(task.dueDate).toDateString();
+        if (!map[dateKey]) map[dateKey] = [];
+        map[dateKey].push(task);
       }
-    })
-    return map
-  }, [tasks])
+    });
+    return map;
+  }, [tasks]);
 
   const selectedDateTasks = useMemo(() => {
-    if (!selectedDate) return []
-    const dateKey = selectedDate.toDateString()
-    return tasksByDate[dateKey] || []
-  }, [selectedDate, tasksByDate])
+    if (!selectedDate) return [];
+    const dateKey = selectedDate.toDateString();
+    return tasksByDate[dateKey] || [];
+  }, [selectedDate, tasksByDate]);
 
-  const navigateMonth = (direction) => {
+  const navigateMonth = (direction: number) => {
     setCurrentDate(prev => {
-      const newDate = new Date(prev)
-      newDate.setMonth(newDate.getMonth() + direction)
-      return newDate
-    })
-    setSelectedDate(null)
-  }
+      const newDate = new Date(prev);
+      newDate.setMonth(newDate.getMonth() + direction);
+      return newDate;
+    });
+    setSelectedDate(null);
+  };
 
-  const handleMonthChange = (monthIndex) => {
+  const handleMonthChange = (monthIndex: number) => {
     setCurrentDate(prev => {
-      const newDate = new Date(prev)
-      newDate.setMonth(monthIndex)
-      return newDate
-    })
-    setSelectedDate(null)
-  }
+      const newDate = new Date(prev);
+      newDate.setMonth(monthIndex);
+      return newDate;
+    });
+    setSelectedDate(null);
+  };
 
-  const handleYearChange = (year) => {
+  const handleYearChange = (year: number) => {
     setCurrentDate(prev => {
-      const newDate = new Date(prev)
-      newDate.setFullYear(year)
-      return newDate
-    })
-    setSelectedDate(null)
-  }
+      const newDate = new Date(prev);
+      newDate.setFullYear(year);
+      return newDate;
+    });
+    setSelectedDate(null);
+  };
 
   const goToToday = () => {
-    setCurrentDate(new Date())
-    setSelectedDate(new Date())
-  }
+    setCurrentDate(new Date());
+    setSelectedDate(new Date());
+  };
 
-  const weekDays = t('weekDays')
-  const months = t('months')
+  const weekDays = t('weekDays') as string[];
+  const months = t('months') as string[];
 
-  const getTaskPriorityColor = (task) => {
-    if (task.status === 'completed') return 'bg-emerald-500'
-    if (isOverdue(task.dueDate, task.status)) return 'bg-red-500'
+  const getTaskPriorityColor = (task: Task): string => {
+    if (task.status === 'completed') return 'bg-emerald-500';
+    if (isOverdue(task.dueDate, task.status)) return 'bg-red-500';
     switch (task.priority) {
-      case 'critical': return 'bg-red-600'
-      case 'high': return 'bg-orange-500'
-      case 'medium': return 'bg-amber-500'
-      default: return 'bg-slate-400'
+      case 'critical': return 'bg-red-600';
+      case 'high': return 'bg-orange-500';
+      case 'medium': return 'bg-amber-500';
+      default: return 'bg-slate-400';
     }
-  }
+  };
 
-  const getAssigneeAvatar = (task) => {
-    const member = teamMembers.find(m => m.id === task.assignee)
-    return member?.avatar || null
-  }
+  const getAssigneeAvatar = (task: Task): string | null => {
+    const member = teamMembers.find(m => m.id === task.assignee);
+    return member?.avatar || null;
+  };
 
   return (
     <div className="bg-white rounded-2xl shadow-sm overflow-hidden border border-slate-200">
@@ -190,16 +198,16 @@ export default function Calendar({ tasks, categories, teamMembers, onTaskClick, 
           <div className="grid grid-cols-7">
             {daysInMonth.map((day, index) => {
               if (day.isPadding) {
-                return <div key={`padding-${index}`} className="min-h-[100px] border-b border-r border-slate-200 bg-slate-50" />
+                return <div key={`padding-${index}`} className="min-h-[100px] border-b border-r border-slate-200 bg-slate-50" />;
               }
 
-              const dateKey = day.date.toDateString()
-              const dayTasks = tasksByDate[dateKey] || []
-              const isSelected = selectedDate && day.date.toDateString() === selectedDate.toDateString()
+              const dateKey = day.date!.toDateString();
+              const dayTasks = tasksByDate[dateKey] || [];
+              const isSelected = selectedDate && day.date!.toDateString() === selectedDate.toDateString();
 
               return (
                 <div
-                  key={day.date.toISOString()}
+                  key={day.date!.toISOString()}
                   onClick={() => setSelectedDate(day.date)}
                   className={`min-h-[100px] border-b border-r border-slate-200 p-1.5 cursor-pointer transition-all ${
                     isSelected ? 'bg-indigo-50 ring-2 ring-indigo-500 ring-inset' : 'hover:bg-slate-50'
@@ -208,15 +216,15 @@ export default function Calendar({ tasks, categories, teamMembers, onTaskClick, 
                   <div className={`text-sm font-semibold mb-1.5 w-7 h-7 flex items-center justify-center rounded-full ${
                     day.isToday ? 'bg-gradient-to-br from-indigo-500 to-purple-500 text-white shadow-lg' : day.isPast ? 'text-slate-400' : 'text-slate-700'
                   }`}>
-                    {day.date.getDate()}
+                    {day.date!.getDate()}
                   </div>
                   <div className="space-y-1">
                     {dayTasks.slice(0, 3).map(task => (
                       <div
                         key={task.id}
                         onClick={(e) => {
-                          e.stopPropagation()
-                          onTaskClick(task)
+                          e.stopPropagation();
+                          onTaskClick(task);
                         }}
                         className={`text-xs px-2 py-1 rounded-lg truncate text-white cursor-pointer hover:opacity-80 transition-all ${getTaskPriorityColor(task)} ${
                           task.status === 'completed' ? 'opacity-60 line-through' : ''
@@ -233,7 +241,7 @@ export default function Calendar({ tasks, categories, teamMembers, onTaskClick, 
                     )}
                   </div>
                 </div>
-              )
+              );
             })}
           </div>
         </div>
@@ -265,8 +273,8 @@ export default function Calendar({ tasks, categories, teamMembers, onTaskClick, 
               ) : (
                 <div className="space-y-2">
                   {selectedDateTasks.map(task => {
-                    const category = categories.find(c => c.id === task.category)
-                    const avatar = getAssigneeAvatar(task)
+                    const category = categories.find(c => c.id === task.category);
+                    const avatar = getAssigneeAvatar(task);
 
                     return (
                       <div
@@ -302,7 +310,7 @@ export default function Calendar({ tasks, categories, teamMembers, onTaskClick, 
                           </div>
                         </div>
                       </div>
-                    )
+                    );
                   })}
                 </div>
               )}
@@ -336,5 +344,5 @@ export default function Calendar({ tasks, categories, teamMembers, onTaskClick, 
         </div>
       </div>
     </div>
-  )
+  );
 }

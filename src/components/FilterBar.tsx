@@ -1,5 +1,6 @@
-import React from 'react'
-import { useLanguage } from '../hooks/useLanguage'
+import React from 'react';
+import { useLanguage } from '../hooks/useLanguage';
+import { FilterBarProps } from '../types';
 
 export default function FilterBar({
   filters,
@@ -8,12 +9,12 @@ export default function FilterBar({
   setSortBy,
   categories,
   teamMembers
-}) {
-  const { t } = useLanguage()
+}: FilterBarProps) {
+  const { t } = useLanguage();
 
-  const handleFilterChange = (key, value) => {
-    setFilters(prev => ({ ...prev, [key]: value }))
-  }
+  const handleFilterChange = (key: keyof typeof filters, value: string) => {
+    setFilters(prev => ({ ...prev, [key]: value }));
+  };
 
   const clearFilters = () => {
     setFilters({
@@ -22,10 +23,10 @@ export default function FilterBar({
       priority: '',
       status: '',
       assignee: ''
-    })
-  }
+    });
+  };
 
-  const hasActiveFilters = filters.search || filters.category || filters.priority || filters.status || filters.assignee
+  const hasActiveFilters = filters.search || filters.category || filters.priority || filters.status || filters.assignee;
 
   return (
     <div className="bg-white rounded-2xl shadow-sm p-6 mb-6 border border-slate-200">
@@ -135,5 +136,5 @@ export default function FilterBar({
         </div>
       </div>
     </div>
-  )
+  );
 }

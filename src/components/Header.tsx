@@ -1,15 +1,16 @@
-import React, { useState } from 'react'
-import { useLanguage } from '../hooks/useLanguage'
-import LanguageSwitcher from './LanguageSwitcher'
+import React, { useState } from 'react';
+import { useLanguage } from '../hooks/useLanguage';
+import LanguageSwitcher from './LanguageSwitcher';
+import { HeaderProps } from '../types';
 
 export default function Header({
   onToggleCategoryManager,
   onToggleTeamManager,
   onExportCSV,
   onExportJSON
-}) {
-  const { t } = useLanguage()
-  const [showExportMenu, setShowExportMenu] = useState(false)
+}: HeaderProps) {
+  const { t } = useLanguage();
+  const [showExportMenu, setShowExportMenu] = useState<boolean>(false);
 
   return (
     <header className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg">
@@ -111,8 +112,8 @@ export default function Header({
                   <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg py-1 z-20">
                     <button
                       onClick={() => {
-                        onExportCSV()
-                        setShowExportMenu(false)
+                        onExportCSV();
+                        setShowExportMenu(false);
                       }}
                       className="w-full px-4 py-2 text-left text-gray-700 hover:bg-gray-100 flex items-center gap-2"
                     >
@@ -123,8 +124,8 @@ export default function Header({
                     </button>
                     <button
                       onClick={() => {
-                        onExportJSON()
-                        setShowExportMenu(false)
+                        onExportJSON();
+                        setShowExportMenu(false);
                       }}
                       className="w-full px-4 py-2 text-left text-gray-700 hover:bg-gray-100 flex items-center gap-2"
                     >
@@ -141,5 +142,5 @@ export default function Header({
         </div>
       </div>
     </header>
-  )
+  );
 }

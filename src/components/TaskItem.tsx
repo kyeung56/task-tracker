@@ -1,7 +1,8 @@
-import React from 'react'
-import { formatDate, isOverdue, priorityColors, statusColors } from '../utils/helpers'
-import { useLanguage } from '../hooks/useLanguage'
-import TimeTracker from './TimeTracker'
+import React from 'react';
+import { formatDate, isOverdue, priorityColors, statusColors } from '../utils/helpers';
+import { useLanguage } from '../hooks/useLanguage';
+import TimeTracker from './TimeTracker';
+import { TaskItemProps, Status, Priority } from '../types';
 
 export default function TaskItem({
   task,
@@ -11,20 +12,20 @@ export default function TaskItem({
   onDelete,
   onStatusChange,
   onTimeUpdate
-}) {
-  const { t } = useLanguage()
-  const category = categories.find(c => c.id === task.category)
-  const assignee = teamMembers.find(m => m.id === task.assignee)
-  const overdue = isOverdue(task.dueDate, task.status)
+}: TaskItemProps) {
+  const { t } = useLanguage();
+  const category = categories.find(c => c.id === task.category);
+  const assignee = teamMembers.find(m => m.id === task.assignee);
+  const overdue = isOverdue(task.dueDate, task.status);
 
   const handleStatusToggle = () => {
-    const statusOrder = ['pending', 'in-progress', 'review', 'completed']
-    const currentIndex = statusOrder.indexOf(task.status)
-    const nextStatus = statusOrder[(currentIndex + 1) % statusOrder.length]
-    onStatusChange(task.id, nextStatus)
-  }
+    const statusOrder: Status[] = ['pending', 'in-progress', 'review', 'completed'];
+    const currentIndex = statusOrder.indexOf(task.status);
+    const nextStatus = statusOrder[(currentIndex + 1) % statusOrder.length];
+    onStatusChange(task.id, nextStatus);
+  };
 
-  const statusIcons = {
+  const statusIcons: Record<Status, React.ReactNode> = {
     pending: (
       <div className="w-6 h-6 rounded-full border-2 border-slate-300 flex items-center justify-center">
         <div className="w-2 h-2 rounded-full bg-transparent"></div>
@@ -49,23 +50,23 @@ export default function TaskItem({
         </svg>
       </div>
     )
-  }
+  };
 
-  const statusLabels = {
+  const statusLabels: Record<Status, string> = {
     'in-progress': t('statusInProgress'),
     'review': t('statusReview'),
     'pending': t('statusPending'),
     'completed': t('statusCompleted')
-  }
+  };
 
-  const priorityLabels = {
+  const priorityLabels: Record<Priority, string> = {
     low: t('priorityLow'),
     medium: t('priorityMedium'),
     high: t('priorityHigh'),
     critical: t('priorityCritical')
-  }
+  };
 
-  const tags = task.tags ? task.tags.split(',').map(t => t.trim()).filter(Boolean) : []
+  const tags = task.tags ? task.tags.split(',').map(t => t.trim()).filter(Boolean) : [];
 
   return (
     <div
@@ -196,5 +197,5 @@ export default function TaskItem({
         </div>
       </div>
     </div>
-  )
+  );
 }

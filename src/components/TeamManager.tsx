@@ -1,64 +1,65 @@
-import React, { useState } from 'react'
-import { generateId } from '../utils/helpers'
-import { useLanguage } from '../hooks/useLanguage'
+import React, { useState } from 'react';
+import { generateId } from '../utils/helpers';
+import { useLanguage } from '../hooks/useLanguage';
+import { TeamManagerProps, TeamMember } from '../types';
 
-const roles = ['Admin', 'Manager', 'Developer', 'Designer', 'QA', 'Other']
+const roles: string[] = ['Admin', 'Manager', 'Developer', 'Designer', 'QA', 'Other'];
 
-export default function TeamManager({ teamMembers, setTeamMembers, onClose }) {
-  const { t } = useLanguage()
-  const [newName, setNewName] = useState('')
-  const [newEmail, setNewEmail] = useState('')
-  const [newRole, setNewRole] = useState('Developer')
-  const [editingId, setEditingId] = useState(null)
-  const [editName, setEditName] = useState('')
-  const [editEmail, setEditEmail] = useState('')
-  const [editRole, setEditRole] = useState('')
+export default function TeamManager({ teamMembers, setTeamMembers, onClose }: TeamManagerProps) {
+  const { t } = useLanguage();
+  const [newName, setNewName] = useState<string>('');
+  const [newEmail, setNewEmail] = useState<string>('');
+  const [newRole, setNewRole] = useState<string>('Developer');
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editName, setEditName] = useState<string>('');
+  const [editEmail, setEditEmail] = useState<string>('');
+  const [editRole, setEditRole] = useState<string>('');
 
-  const handleAddMember = (e) => {
-    e.preventDefault()
-    if (!newName.trim()) return
+  const handleAddMember = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newName.trim()) return;
 
-    const newMember = {
+    const newMember: TeamMember = {
       id: generateId(),
       name: newName.trim(),
       email: newEmail.trim(),
       role: newRole,
       avatar: newName.trim().charAt(0).toUpperCase()
-    }
+    };
 
-    setTeamMembers([...teamMembers, newMember])
-    setNewName('')
-    setNewEmail('')
-    setNewRole('Developer')
-  }
+    setTeamMembers([...teamMembers, newMember]);
+    setNewName('');
+    setNewEmail('');
+    setNewRole('Developer');
+  };
 
-  const handleStartEdit = (member) => {
-    setEditingId(member.id)
-    setEditName(member.name)
-    setEditEmail(member.email || '')
-    setEditRole(member.role)
-  }
+  const handleStartEdit = (member: TeamMember) => {
+    setEditingId(member.id);
+    setEditName(member.name);
+    setEditEmail(member.email || '');
+    setEditRole(member.role);
+  };
 
-  const handleSaveEdit = (id) => {
-    if (!editName.trim()) return
+  const handleSaveEdit = (id: string) => {
+    if (!editName.trim()) return;
 
     setTeamMembers(teamMembers.map(m =>
       m.id === id
         ? { ...m, name: editName.trim(), email: editEmail.trim(), role: editRole, avatar: editName.trim().charAt(0).toUpperCase() }
         : m
-    ))
-    setEditingId(null)
-  }
+    ));
+    setEditingId(null);
+  };
 
   const handleCancelEdit = () => {
-    setEditingId(null)
-  }
+    setEditingId(null);
+  };
 
-  const handleDeleteMember = (id) => {
+  const handleDeleteMember = (id: string) => {
     if (window.confirm('Are you sure you want to remove this team member?')) {
-      setTeamMembers(teamMembers.filter(m => m.id !== id))
+      setTeamMembers(teamMembers.filter(m => m.id !== id));
     }
-  }
+  };
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
@@ -205,5 +206,5 @@ export default function TeamManager({ teamMembers, setTeamMembers, onClose }) {
         </div>
       </div>
     </div>
-  )
+  );
 }

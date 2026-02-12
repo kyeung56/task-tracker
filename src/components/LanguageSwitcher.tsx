@@ -1,17 +1,23 @@
-import React, { useState } from 'react'
-import { useLanguage } from '../hooks/useLanguage'
+import React, { useState } from 'react';
+import { useLanguage } from '../hooks/useLanguage';
+
+interface Language {
+  code: string;
+  name: string;
+  flag: string;
+}
 
 export default function LanguageSwitcher() {
-  const { language, setLanguage } = useLanguage()
-  const [isOpen, setIsOpen] = useState(false)
+  const { language, setLanguage } = useLanguage();
+  const [isOpen, setIsOpen] = useState<boolean>(false);
 
-  const languages = [
+  const languages: Language[] = [
     { code: 'en', name: 'English', flag: '🇺🇸' },
     { code: 'zh-TW', name: '繁體中文', flag: '🇹🇼' },
     { code: 'zh-CN', name: '简体中文', flag: '🇨🇳' }
-  ]
+  ];
 
-  const currentLang = languages.find(l => l.code === language)
+  const currentLang = languages.find(l => l.code === language);
 
   return (
     <div className="relative">
@@ -39,8 +45,8 @@ export default function LanguageSwitcher() {
               <button
                 key={lang.code}
                 onClick={() => {
-                  setLanguage(lang.code)
-                  setIsOpen(false)
+                  setLanguage(lang.code);
+                  setIsOpen(false);
                 }}
                 className={`w-full px-3 py-2 text-left hover:bg-slate-700 flex items-center gap-2 ${
                   language === lang.code ? 'bg-indigo-600/30 text-indigo-300' : 'text-slate-300'
@@ -59,5 +65,5 @@ export default function LanguageSwitcher() {
         </>
       )}
     </div>
-  )
+  );
 }

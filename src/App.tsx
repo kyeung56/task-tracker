@@ -1,66 +1,67 @@
-import React, { useState, useMemo } from 'react'
-import { useLocalStorage } from './hooks/useLocalStorage'
-import { useLanguage } from './hooks/useLanguage'
-import { defaultCategories, filterTasks, sortTasks, exportToCSV, exportToJSON } from './utils/helpers'
-import Sidebar from './components/Sidebar'
-import FilterBar from './components/FilterBar'
-import TaskList from './components/TaskList'
-import TaskForm from './components/TaskForm'
-import CategoryManager from './components/CategoryManager'
-import TeamManager from './components/TeamManager'
-import Dashboard from './components/Dashboard'
-import Calendar from './components/Calendar'
+import React, { useState, useMemo } from 'react';
+import { useLocalStorage } from './hooks/useLocalStorage';
+import { useLanguage } from './hooks/useLanguage';
+import { defaultCategories, filterTasks, sortTasks, exportToCSV, exportToJSON } from './utils/helpers';
+import Sidebar from './components/Sidebar';
+import FilterBar from './components/FilterBar';
+import TaskList from './components/TaskList';
+import TaskForm from './components/TaskForm';
+import CategoryManager from './components/CategoryManager';
+import TeamManager from './components/TeamManager';
+import Dashboard from './components/Dashboard';
+import Calendar from './components/Calendar';
+import { Task, Category, TeamMember, FilterState, TaskStats, Status } from './types';
 
 export default function App() {
-  const { t } = useLanguage()
-  const [tasks, setTasks] = useLocalStorage('tasks', [])
-  const [categories, setCategories] = useLocalStorage('categories', defaultCategories)
-  const [teamMembers, setTeamMembers] = useLocalStorage('teamMembers', [])
+  const { t } = useLanguage();
+  const [tasks, setTasks] = useLocalStorage<Task[]>('tasks', []);
+  const [categories, setCategories] = useLocalStorage<Category[]>('categories', defaultCategories);
+  const [teamMembers, setTeamMembers] = useLocalStorage<TeamMember[]>('teamMembers', []);
 
-  const [showTaskForm, setShowTaskForm] = useState(false)
-  const [editingTask, setEditingTask] = useState(null)
-  const [defaultDueDate, setDefaultDueDate] = useState(null)
-  const [showCategoryManager, setShowCategoryManager] = useState(false)
-  const [showTeamManager, setShowTeamManager] = useState(false)
-  const [activeView, setActiveView] = useState('tasks')
+  const [showTaskForm, setShowTaskForm] = useState<boolean>(false);
+  const [editingTask, setEditingTask] = useState<Task | null>(null);
+  const [defaultDueDate, setDefaultDueDate] = useState<string | null>(null);
+  const [showCategoryManager, setShowCategoryManager] = useState<boolean>(false);
+  const [showTeamManager, setShowTeamManager] = useState<boolean>(false);
+  const [activeView, setActiveView] = useState<string>('tasks');
 
-  const [filters, setFilters] = useState({
+  const [filters, setFilters] = useState<FilterState>({
     search: '',
     category: '',
     priority: '',
     status: '',
     assignee: ''
-  })
-  const [sortBy, setSortBy] = useState('created')
+  });
+  const [sortBy, setSortBy] = useState<string>('created');
 
   const filteredAndSortedTasks = useMemo(() => {
-    const filtered = filterTasks(tasks, filters)
-    return sortTasks(filtered, sortBy)
-  }, [tasks, filters, sortBy])
+    const filtered = filterTasks(tasks, filters);
+    return sortTasks(filtered, sortBy);
+  }, [tasks, filters, sortBy]);
 
-  const handleSaveTask = (taskData) => {
+  const handleSaveTask = (taskData: Task) => {
     if (editingTask) {
-      setTasks(tasks.map(t => t.id === taskData.id ? taskData : t))
+      setTasks(tasks.map(t => t.id === taskData.id ? taskData : t));
     } else {
-      setTasks([...tasks, taskData])
+      setTasks([...tasks, taskData]);
     }
-    setShowTaskForm(false)
-    setEditingTask(null)
-  }
+    setShowTaskForm(false);
+    setEditingTask(null);
+  };
 
-  const handleEditTask = (task) => {
-    setEditingTask(task)
-    setShowTaskForm(true)
-  }
+  const handleEditTask = (task: Task) => {
+    setEditingTask(task);
+    setShowTaskForm(true);
+  };
 
-  const handleDeleteTask = (id) => {
+  const handleDeleteTask = (id: string) => {
     if (window.confirm(t('confirmDeleteTask'))) {
-      setTasks(tasks.filter(t => t.id !== id))
+      setTasks(tasks.filter(t => t.id !== id));
     }
-  }
+  };
 
-  const handleStatusChange = (id, newStatus) => {
-    const now = new Date().toISOString()
+  const handleStatusChange = (id: string, newStatus: Status) => {
+    const now = new Date().toISOString();
     setTasks(tasks.map(t =>
       t.id === id
         ? {
@@ -70,44 +71,44 @@ export default function App() {
             ...(newStatus === 'completed' && t.status !== 'completed' ? { completedAt: now } : {})
           }
         : t
-    ))
-  }
+    ));
+  };
 
-  const handleTimeUpdate = (taskId, newLoggedHours) => {
+  const handleTimeUpdate = (taskId: string, newLoggedHours: number) => {
     setTasks(tasks.map(t =>
       t.id === taskId
         ? { ...t, loggedHours: newLoggedHours, updatedAt: new Date().toISOString() }
         : t
-    ))
-  }
+    ));
+  };
 
   const handleCloseTaskForm = () => {
-    setShowTaskForm(false)
-    setEditingTask(null)
-    setDefaultDueDate(null)
-  }
+    setShowTaskForm(false);
+    setEditingTask(null);
+    setDefaultDueDate(null);
+  };
 
-  const taskStats = useMemo(() => {
-    const total = tasks.length
-    const completed = tasks.filter(t => t.status === 'completed').length
-    const inProgress = tasks.filter(t => t.status === 'in-progress').length
-    const review = tasks.filter(t => t.status === 'review').length
-    const pending = tasks.filter(t => t.status === 'pending').length
+  const taskStats: TaskStats = useMemo(() => {
+    const total = tasks.length;
+    const completed = tasks.filter(t => t.status === 'completed').length;
+    const inProgress = tasks.filter(t => t.status === 'in-progress').length;
+    const review = tasks.filter(t => t.status === 'review').length;
+    const pending = tasks.filter(t => t.status === 'pending').length;
     const overdue = tasks.filter(t => {
-      if (!t.dueDate || t.status === 'completed') return false
-      return new Date(t.dueDate) < new Date()
-    }).length
-    return { total, completed, inProgress, review, pending, overdue }
-  }, [tasks])
+      if (!t.dueDate || t.status === 'completed') return false;
+      return new Date(t.dueDate) < new Date();
+    }).length;
+    return { total, completed, inProgress, review, pending, overdue };
+  }, [tasks]);
 
-  const getViewTitle = () => {
+  const getViewTitle = (): string => {
     switch (activeView) {
-      case 'tasks': return t('tasks')
-      case 'calendar': return t('calendar')
-      case 'dashboard': return t('dashboard')
-      default: return t('tasks')
+      case 'tasks': return t('tasks');
+      case 'calendar': return t('calendar');
+      case 'dashboard': return t('dashboard');
+      default: return t('tasks');
     }
-  }
+  };
 
   return (
     <div className="min-h-screen bg-slate-100 flex">
@@ -142,10 +143,10 @@ export default function App() {
             categories={categories}
             teamMembers={teamMembers}
             onTaskClick={handleEditTask}
-            onDateClick={(date) => {
-              setEditingTask(null)
-              setDefaultDueDate(date.toISOString().split('T')[0])
-              setShowTaskForm(true)
+            onDateClick={(date: Date) => {
+              setEditingTask(null);
+              setDefaultDueDate(date.toISOString().split('T')[0]);
+              setShowTaskForm(true);
             }}
           />
         ) : activeView === 'dashboard' ? (
@@ -202,5 +203,5 @@ export default function App() {
         />
       )}
     </div>
-  )
+  );
 }

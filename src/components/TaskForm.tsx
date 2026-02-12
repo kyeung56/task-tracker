@@ -1,6 +1,24 @@
-import React, { useState, useEffect } from 'react'
-import { generateId } from '../utils/helpers'
-import { useLanguage } from '../hooks/useLanguage'
+import React, { useState, useEffect } from 'react';
+import { generateId } from '../utils/helpers';
+import { useLanguage } from '../hooks/useLanguage';
+import { TaskFormProps, Task, Status, Priority } from '../types';
+
+interface FormData {
+  title: string;
+  description: string;
+  category: string;
+  priority: Priority;
+  status: Status;
+  dueDate: string;
+  assignee: string;
+  estimatedHours: string;
+  tags: string;
+}
+
+interface FormErrors {
+  title?: string;
+  category?: string;
+}
 
 export default function TaskForm({
   task,
@@ -9,9 +27,9 @@ export default function TaskForm({
   defaultDueDate,
   onSave,
   onCancel
-}) {
-  const { t } = useLanguage()
-  const [formData, setFormData] = useState({
+}: TaskFormProps) {
+  const { t } = useLanguage();
+  const [formData, setFormData] = useState<FormData>({
     title: '',
     description: '',
     category: categories[0]?.id || '',
@@ -21,8 +39,8 @@ export default function TaskForm({
     assignee: '',
     estimatedHours: '',
     tags: ''
-  })
-  const [errors, setErrors] = useState({})
+  });
+  const [errors, setErrors] = useState<FormErrors>({});
 
   useEffect(() => {
     if (task) {
@@ -34,40 +52,40 @@ export default function TaskForm({
         status: task.status,
         dueDate: task.dueDate || '',
         assignee: task.assignee || '',
-        estimatedHours: task.estimatedHours || '',
+        estimatedHours: task.estimatedHours ? task.estimatedHours.toString() : '',
         tags: task.tags || ''
-      })
+      });
     } else if (defaultDueDate) {
-      setFormData(prev => ({ ...prev, dueDate: defaultDueDate }))
+      setFormData(prev => ({ ...prev, dueDate: defaultDueDate }));
     }
-  }, [task, defaultDueDate])
+  }, [task, defaultDueDate]);
 
-  const handleChange = (e) => {
-    const { name, value } = e.target
-    setFormData(prev => ({ ...prev, [name]: value }))
-    if (errors[name]) {
-      setErrors(prev => ({ ...prev, [name]: '' }))
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+    if (errors[name as keyof FormErrors]) {
+      setErrors(prev => ({ ...prev, [name]: undefined }));
     }
-  }
+  };
 
-  const validate = () => {
-    const newErrors = {}
+  const validate = (): boolean => {
+    const newErrors: FormErrors = {};
     if (!formData.title.trim()) {
-      newErrors.title = t('titleRequired')
+      newErrors.title = t('titleRequired');
     }
     if (!formData.category) {
-      newErrors.category = t('categoryRequired')
+      newErrors.category = t('categoryRequired');
     }
-    setErrors(newErrors)
-    return Object.keys(newErrors).length === 0
-  }
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
-  const handleSubmit = (e) => {
-    e.preventDefault()
-    if (!validate()) return
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!validate()) return;
 
-    const now = new Date().toISOString()
-    const taskData = {
+    const now = new Date().toISOString();
+    const taskData: Partial<Task> = {
       ...formData,
       title: formData.title.trim(),
       description: formData.description.trim(),
@@ -76,30 +94,37 @@ export default function TaskForm({
       estimatedHours: parseFloat(formData.estimatedHours) || 0,
       tags: formData.tags.trim(),
       updatedAt: now
-    }
+    };
 
     if (task && task.status !== 'completed' && formData.status === 'completed') {
-      taskData.completedAt = now
+      taskData.completedAt = now;
     }
 
     if (task) {
-      onSave({ ...task, ...taskData })
+      onSave({ ...task, ...taskData } as Task);
     } else {
-      onSave({
+      const newTask: Task = {
         ...taskData,
         id: generateId(),
-        createdAt: now,
         loggedHours: 0,
+        createdAt: now,
+        description: formData.description.trim(),
+        dueDate: formData.dueDate || null,
+        assignee: formData.assignee || null,
+        estimatedHours: parseFloat(formData.estimatedHours) || 0,
+        tags: formData.tags.trim(),
+        completedAt: null,
         comments: []
-      })
+      } as Task;
+      onSave(newTask);
     }
-  }
+  };
 
-  const handleKeyDown = (e) => {
+  const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Escape') {
-      onCancel()
+      onCancel();
     }
-  }
+  };
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
@@ -305,5 +330,5 @@ export default function TaskForm({
         </form>
       </div>
     </div>
-  )
+  );
 }

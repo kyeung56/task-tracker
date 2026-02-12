@@ -1,45 +1,70 @@
-import React from 'react'
-import { useLanguage } from '../hooks/useLanguage'
+import React from 'react';
+import { useLanguage } from '../hooks/useLanguage';
+import { DashboardProps, TaskStats, TeamMember } from '../types';
 
-export default function Dashboard({ tasks, teamMembers }) {
-  const { t } = useLanguage()
+interface Stats {
+  total: number;
+  completed: number;
+  inProgress: number;
+  pending: number;
+  review: number;
+  overdue: number;
+  completedThisWeek: number;
+  highPriority: number;
+  byAssignee: Record<string, { total: number; completed: number }>;
+  byCategory: Record<string, number>;
+  estimatedHours: number;
+  loggedHours: number;
+  completionRate: number;
+}
 
-  const stats = React.useMemo(() => {
-    const now = new Date()
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
-    const thisWeek = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000)
+interface StatCardProps {
+  title: string;
+  value: number | string;
+  subtitle?: string;
+  gradient: string;
+  icon: React.ReactNode;
+}
 
-    const completed = tasks.filter(t => t.status === 'completed')
-    const inProgress = tasks.filter(t => t.status === 'in-progress')
-    const pending = tasks.filter(t => t.status === 'pending')
-    const review = tasks.filter(t => t.status === 'review')
+export default function Dashboard({ tasks, teamMembers }: DashboardProps) {
+  const { t } = useLanguage();
+
+  const stats = React.useMemo<Stats>(() => {
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const thisWeek = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+
+    const completed = tasks.filter(t => t.status === 'completed');
+    const inProgress = tasks.filter(t => t.status === 'in-progress');
+    const pending = tasks.filter(t => t.status === 'pending');
+    const review = tasks.filter(t => t.status === 'review');
     const overdue = tasks.filter(t => {
-      if (!t.dueDate || t.status === 'completed') return false
-      return new Date(t.dueDate) < today
-    })
+      if (!t.dueDate || t.status === 'completed') return false;
+      return new Date(t.dueDate) < today;
+    });
 
-    const completedThisWeek = completed.filter(t => new Date(t.completedAt) >= thisWeek)
-    const highPriority = tasks.filter(t => (t.priority === 'high' || t.priority === 'critical') && t.status !== 'completed')
+    const completedThisWeek = completed.filter(t => t.completedAt && new Date(t.completedAt) >= thisWeek);
+    const highPriority = tasks.filter(t => (t.priority === 'high' || t.priority === 'critical') && t.status !== 'completed');
 
-    const byAssignee = {}
+    const byAssignee: Record<string, { total: number; completed: number }> = {};
     tasks.forEach(t => {
       if (t.assignee) {
-        if (!byAssignee[t.assignee]) byAssignee[t.assignee] = { total: 0, completed: 0 }
-        byAssignee[t.assignee].total++
-        if (t.status === 'completed') byAssignee[t.assignee].completed++
+        if (!byAssignee[t.assignee]) byAssignee[t.assignee] = { total: 0, completed: 0 };
+        byAssignee[t.assignee].total++;
+        if (t.status === 'completed') byAssignee[t.assignee].completed++;
       }
-    })
+    });
 
-    const byCategory = {}
+    const byCategory: Record<string, number> = {};
     tasks.forEach(t => {
       if (t.category) {
-        if (!byCategory[t.category]) byCategory[t.category] = 0
-        byCategory[t.category]++
+        if (!byCategory[t.category]) byCategory[t.category] = 0;
+        byCategory[t.category]++;
       }
-    })
+    });
 
-    const estimatedHours = tasks.reduce((sum, t) => sum + (t.estimatedHours || 0), 0)
-    const loggedHours = tasks.reduce((sum, t) => sum + (t.loggedHours || 0), 0)
+    const estimatedHours = tasks.reduce((sum, t) => sum + (t.estimatedHours || 0), 0);
+    const loggedHours = tasks.reduce((sum, t) => sum + (t.loggedHours || 0), 0);
 
     return {
       total: tasks.length,
@@ -55,10 +80,10 @@ export default function Dashboard({ tasks, teamMembers }) {
       estimatedHours,
       loggedHours,
       completionRate: tasks.length > 0 ? Math.round((completed.length / tasks.length) * 100) : 0
-    }
-  }, [tasks])
+    };
+  }, [tasks]);
 
-  const StatCard = ({ title, value, subtitle, color, icon, gradient }) => (
+  const StatCard = ({ title, value, subtitle, gradient, icon }: StatCardProps) => (
     <div className={`bg-white rounded-2xl shadow-sm p-5 border border-slate-200 hover:shadow-md transition-all`}>
       <div className="flex items-start justify-between">
         <div>
@@ -71,7 +96,7 @@ export default function Dashboard({ tasks, teamMembers }) {
         </div>
       </div>
     </div>
-  )
+  );
 
   return (
     <div className="space-y-6">
@@ -144,8 +169,8 @@ export default function Dashboard({ tasks, teamMembers }) {
         {Object.keys(stats.byAssignee).length > 0 ? (
           <div className="space-y-4">
             {Object.entries(stats.byAssignee).map(([assigneeId, data]) => {
-              const member = teamMembers.find(m => m.id === assigneeId)
-              const rate = Math.round((data.completed / data.total) * 100)
+              const member = teamMembers.find(m => m.id === assigneeId);
+              const rate = Math.round((data.completed / data.total) * 100);
               return (
                 <div key={assigneeId} className="flex items-center gap-4">
                   <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center text-sm font-bold text-white shadow-lg">
@@ -164,7 +189,7 @@ export default function Dashboard({ tasks, teamMembers }) {
                     </div>
                   </div>
                 </div>
-              )
+              );
             })}
           </div>
         ) : (
@@ -184,12 +209,12 @@ export default function Dashboard({ tasks, teamMembers }) {
                 'bg-gradient-to-r from-amber-500 to-amber-600',
                 'bg-gradient-to-r from-rose-500 to-rose-600',
                 'bg-gradient-to-r from-purple-500 to-purple-600'
-              ]
+              ];
               return (
                 <span key={catId} className={`px-4 py-2 rounded-xl text-sm font-semibold text-white shadow-sm ${colors[index % colors.length]}`}>
                   {count} {t('tasks')}
                 </span>
-              )
+              );
             })}
           </div>
         ) : (
@@ -197,5 +222,5 @@ export default function Dashboard({ tasks, teamMembers }) {
         )}
       </div>
     </div>
-  )
+  );
 }

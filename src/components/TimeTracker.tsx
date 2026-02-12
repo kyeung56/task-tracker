@@ -1,54 +1,55 @@
-import React, { useState, useEffect } from 'react'
-import { useLanguage } from '../hooks/useLanguage'
+import React, { useState, useEffect } from 'react';
+import { useLanguage } from '../hooks/useLanguage';
+import { TimeTrackerProps } from '../types';
 
-export default function TimeTracker({ taskId, loggedHours, estimatedHours, onUpdate }) {
-  const { t } = useLanguage()
-  const [isRunning, setIsRunning] = useState(false)
-  const [elapsed, setElapsed] = useState(0)
-  const [showInput, setShowInput] = useState(false)
-  const [manualHours, setManualHours] = useState('')
-  const [manualMinutes, setManualMinutes] = useState('')
+export default function TimeTracker({ taskId, loggedHours, estimatedHours, onUpdate }: TimeTrackerProps) {
+  const { t } = useLanguage();
+  const [isRunning, setIsRunning] = useState<boolean>(false);
+  const [elapsed, setElapsed] = useState<number>(0);
+  const [showInput, setShowInput] = useState<boolean>(false);
+  const [manualHours, setManualHours] = useState<string>('');
+  const [manualMinutes, setManualMinutes] = useState<string>('');
 
   useEffect(() => {
-    let interval
+    let interval: ReturnType<typeof setInterval>;
     if (isRunning) {
       interval = setInterval(() => {
-        setElapsed(prev => prev + 1)
-      }, 1000)
+        setElapsed(prev => prev + 1);
+      }, 1000);
     }
-    return () => clearInterval(interval)
-  }, [isRunning])
+    return () => clearInterval(interval);
+  }, [isRunning]);
 
-  const formatTime = (seconds) => {
-    const hrs = Math.floor(seconds / 3600)
-    const mins = Math.floor((seconds % 3600) / 60)
-    const secs = seconds % 60
-    return `${hrs.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
-  }
+  const formatTime = (seconds: number): string => {
+    const hrs = Math.floor(seconds / 3600);
+    const mins = Math.floor((seconds % 3600) / 60);
+    const secs = seconds % 60;
+    return `${hrs.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
 
   const handleStart = () => {
-    setIsRunning(true)
-  }
+    setIsRunning(true);
+  };
 
   const handleStop = () => {
-    setIsRunning(false)
-    const hoursToAdd = elapsed / 3600
-    onUpdate(taskId, loggedHours + hoursToAdd)
-    setElapsed(0)
-  }
+    setIsRunning(false);
+    const hoursToAdd = elapsed / 3600;
+    onUpdate(taskId, loggedHours + hoursToAdd);
+    setElapsed(0);
+  };
 
-  const handleManualSubmit = (e) => {
-    e.preventDefault()
-    const hours = parseFloat(manualHours) || 0
-    const minutes = parseFloat(manualMinutes) || 0
-    const totalToAdd = hours + (minutes / 60)
+  const handleManualSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const hours = parseFloat(manualHours) || 0;
+    const minutes = parseFloat(manualMinutes) || 0;
+    const totalToAdd = hours + (minutes / 60);
     if (totalToAdd > 0) {
-      onUpdate(taskId, loggedHours + totalToAdd)
-      setManualHours('')
-      setManualMinutes('')
-      setShowInput(false)
+      onUpdate(taskId, loggedHours + totalToAdd);
+      setManualHours('');
+      setManualMinutes('');
+      setShowInput(false);
     }
-  }
+  };
 
   return (
     <div className="flex items-center gap-2">
@@ -128,5 +129,5 @@ export default function TimeTracker({ taskId, loggedHours, estimatedHours, onUpd
         </form>
       )}
     </div>
-  )
+  );
 }

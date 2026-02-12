@@ -1,6 +1,7 @@
-import React from 'react'
-import TaskItem from './TaskItem'
-import { useLanguage } from '../hooks/useLanguage'
+import React from 'react';
+import TaskItem from './TaskItem';
+import { useLanguage } from '../hooks/useLanguage';
+import { TaskListProps } from '../types';
 
 export default function TaskList({
   tasks,
@@ -10,8 +11,8 @@ export default function TaskList({
   onDelete,
   onStatusChange,
   onTimeUpdate
-}) {
-  const { t } = useLanguage()
+}: TaskListProps) {
+  const { t } = useLanguage();
 
   if (tasks.length === 0) {
     return (
@@ -36,7 +37,7 @@ export default function TaskList({
           {t('getStarted')}
         </p>
       </div>
-    )
+    );
   }
 
   return (
@@ -54,5 +55,5 @@ export default function TaskList({
         />
       ))}
     </div>
-  )
+  );
 }

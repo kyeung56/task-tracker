@@ -1,6 +1,13 @@
-import React from 'react'
-import { useLanguage } from '../hooks/useLanguage'
-import LanguageSwitcher from './LanguageSwitcher'
+import React from 'react';
+import { useLanguage } from '../hooks/useLanguage';
+import LanguageSwitcher from './LanguageSwitcher';
+import { SidebarProps, TaskStats } from '../types';
+
+interface NavItem {
+  id: string;
+  icon: string;
+  label: string;
+}
 
 export default function Sidebar({
   activeView,
@@ -11,14 +18,14 @@ export default function Sidebar({
   onToggleTeamManager,
   onExportCSV,
   onExportJSON
-}) {
-  const { t } = useLanguage()
+}: SidebarProps) {
+  const { t } = useLanguage();
 
-  const navItems = [
+  const navItems: NavItem[] = [
     { id: 'tasks', icon: '📋', label: t('tasks') },
     { id: 'calendar', icon: '📅', label: t('calendar') },
     { id: 'dashboard', icon: '📊', label: t('dashboard') },
-  ]
+  ];
 
   return (
     <aside className="w-64 bg-gradient-to-b from-slate-900 to-slate-800 text-white flex flex-col h-screen fixed left-0 top-0 shadow-2xl">
@@ -151,5 +158,5 @@ export default function Sidebar({
         </button>
       </div>
     </aside>
-  )
+  );
 }

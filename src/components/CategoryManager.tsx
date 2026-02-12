@@ -1,69 +1,70 @@
-import React, { useState } from 'react'
-import { generateId, defaultCategories } from '../utils/helpers'
-import { useLanguage } from '../hooks/useLanguage'
+import React, { useState } from 'react';
+import { generateId, defaultCategories } from '../utils/helpers';
+import { useLanguage } from '../hooks/useLanguage';
+import { CategoryManagerProps, Category } from '../types';
 
-const colorOptions = [
+const colorOptions: string[] = [
   '#EF4444', '#F59E0B', '#10B981', '#3B82F6',
   '#8B5CF6', '#EC4899', '#6366F1', '#14B8A6'
-]
+];
 
-export default function CategoryManager({ categories, setCategories, onClose }) {
-  const { t } = useLanguage()
-  const [newName, setNewName] = useState('')
-  const [newColor, setNewColor] = useState(colorOptions[0])
-  const [editingId, setEditingId] = useState(null)
-  const [editName, setEditName] = useState('')
-  const [editColor, setEditColor] = useState('')
+export default function CategoryManager({ categories, setCategories, onClose }: CategoryManagerProps) {
+  const { t } = useLanguage();
+  const [newName, setNewName] = useState<string>('');
+  const [newColor, setNewColor] = useState<string>(colorOptions[0]);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editName, setEditName] = useState<string>('');
+  const [editColor, setEditColor] = useState<string>('');
 
-  const handleAddCategory = (e) => {
-    e.preventDefault()
-    if (!newName.trim()) return
+  const handleAddCategory = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newName.trim()) return;
 
-    const newCategory = {
+    const newCategory: Category = {
       id: generateId(),
       name: newName.trim(),
       color: newColor
-    }
+    };
 
-    setCategories([...categories, newCategory])
-    setNewName('')
-    setNewColor(colorOptions[0])
-  }
+    setCategories([...categories, newCategory]);
+    setNewName('');
+    setNewColor(colorOptions[0]);
+  };
 
-  const handleStartEdit = (category) => {
-    setEditingId(category.id)
-    setEditName(category.name)
-    setEditColor(category.color)
-  }
+  const handleStartEdit = (category: Category) => {
+    setEditingId(category.id);
+    setEditName(category.name);
+    setEditColor(category.color);
+  };
 
-  const handleSaveEdit = (id) => {
-    if (!editName.trim()) return
+  const handleSaveEdit = (id: string) => {
+    if (!editName.trim()) return;
 
     setCategories(categories.map(cat =>
       cat.id === id
         ? { ...cat, name: editName.trim(), color: editColor }
         : cat
-    ))
-    setEditingId(null)
-  }
+    ));
+    setEditingId(null);
+  };
 
   const handleCancelEdit = () => {
-    setEditingId(null)
-    setEditName('')
-    setEditColor('')
-  }
+    setEditingId(null);
+    setEditName('');
+    setEditColor('');
+  };
 
-  const handleDeleteCategory = (id) => {
+  const handleDeleteCategory = (id: string) => {
     if (window.confirm('Are you sure you want to delete this category? Tasks in this category will keep the category but it won\'t be available for new tasks.')) {
-      setCategories(categories.filter(cat => cat.id !== id))
+      setCategories(categories.filter(cat => cat.id !== id));
     }
-  }
+  };
 
   const handleResetDefaults = () => {
     if (window.confirm('Reset categories to defaults? This will remove all custom categories.')) {
-      setCategories(defaultCategories)
+      setCategories(defaultCategories);
     }
-  }
+  };
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
@@ -209,5 +210,5 @@ export default function CategoryManager({ categories, setCategories, onClose }) 
         </div>
       </div>
     </div>
-  )
+  );
 }

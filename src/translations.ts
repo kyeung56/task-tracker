@@ -1,4 +1,6 @@
-export const translations = {
+import { Translations } from './types';
+
+export const translations: Record<string, Translations> = {
   en: {
     // Header
     appName: 'ZhongJia Electric Inc.',
@@ -98,7 +100,6 @@ export const translations = {
     logged: 'logged',
     completionRate: 'Completion Rate',
     teamPerformance: 'Team Performance',
-    tasks: 'tasks',
     noTasksAssigned: 'No tasks assigned yet. Assign team members to see performance metrics.',
     tasksByCategory: 'Tasks by Category',
     noCategoriesWithTasks: 'No categories with tasks yet.',
@@ -239,7 +240,6 @@ export const translations = {
     logged: '已記錄',
     completionRate: '完成率',
     teamPerformance: '團隊表現',
-    tasks: '任務',
     noTasksAssigned: '尚未指派任務。指派團隊成員以查看績效指標。',
     tasksByCategory: '依類別分類的任務',
     noCategoriesWithTasks: '尚無包含任務的類別。',
@@ -380,7 +380,6 @@ export const translations = {
     logged: '已记录',
     completionRate: '完成率',
     teamPerformance: '团队表现',
-    tasks: '任务',
     noTasksAssigned: '尚未指派任务。指派团队成员以查看绩效指标。',
     tasksByCategory: '按类别分类的任务',
     noCategoriesWithTasks: '尚无包含任务的类别。',
@@ -423,7 +422,7 @@ export const translations = {
   }
 }
 
-export const languageNames = {
+export const languageNames: Record<string, string> = {
   en: 'English',
   'zh-TW': '繁體中文',
   'zh-CN': '简体中文'
