@@ -1,5 +1,5 @@
 import client, { apiCall } from './client';
-import type { User, Role } from '../types';
+import type { User, Role, ApiResponse } from '../types';
 
 export const usersApi = {
   // Get all users

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useLanguage } from '../../hooks/useLanguage';
 import type { User, Mention } from '../../types';
 import { MentionInput, FileUploader } from '../common';
 
@@ -20,13 +21,17 @@ const CommentEditor: React.FC<CommentEditorProps> = ({
   onCancel,
   initialContent = '',
   initialMentions = [],
-  placeholder = 'Write a comment, @ to mention someone...',
-  submitLabel = 'Send',
+  placeholder,
+  submitLabel,
 }) => {
+  const { t } = useLanguage();
   const [content, setContent] = useState(initialContent);
   const [mentions, setMentions] = useState<Mention[]>(initialMentions);
   const [files, setFiles] = useState<File[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const defaultPlaceholder = t('writeComment') || 'Write a comment, @ to mention someone...';
+  const defaultSubmitLabel = t('send') || 'Send';
 
   const handleSubmit = async () => {
     if (!content.trim() && files.length === 0) return;
@@ -63,7 +68,7 @@ const CommentEditor: React.FC<CommentEditorProps> = ({
               setMentions(newMentions);
             }}
             users={users}
-            placeholder={placeholder}
+            placeholder={placeholder || defaultPlaceholder}
             rows={3}
           />
 
@@ -82,7 +87,7 @@ const CommentEditor: React.FC<CommentEditorProps> = ({
                   onClick={onCancel}
                   className="px-3 py-1.5 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
                 >
-                  Cancel
+                  {t('cancel')}
                 </button>
               )}
               <button
@@ -90,13 +95,13 @@ const CommentEditor: React.FC<CommentEditorProps> = ({
                 disabled={isSubmitting || (!content.trim() && files.length === 0)}
                 className="px-4 py-1.5 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
-                {isSubmitting ? 'Sending...' : submitLabel}
+                {isSubmitting ? t('sending') : (submitLabel || defaultSubmitLabel)}
               </button>
             </div>
           </div>
 
           <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
-            Press <kbd className="px-1.5 py-0.5 bg-gray-100 dark:bg-gray-700 rounded">⌘</kbd> + <kbd className="px-1.5 py-0.5 bg-gray-100 dark:bg-gray-700 rounded">Enter</kbd> to send
+            {t('pressToSend') || 'Press ⌘ + Enter to send'}
           </p>
         </div>
       </div>

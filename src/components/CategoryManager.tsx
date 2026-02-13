@@ -95,43 +95,45 @@ export default function CategoryManager({ categories, setCategories, onClose }: 
                   className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl hover:bg-slate-100 transition-all"
                 >
                   {editingId === category.id ? (
-                    <>
+                    <div className="flex-1 space-y-2">
                       <div className="flex gap-1.5">
                         {colorOptions.map(color => (
                           <button
                             key={color}
                             onClick={() => setEditColor(color)}
-                            className={`w-6 h-6 rounded-full transition-all ${
-                              editColor === color ? 'ring-2 ring-offset-2 ring-indigo-500 scale-110' : ''
+                            className={`w-5 h-5 rounded-full transition-all ${
+                              editColor === color ? 'ring-2 ring-offset-1 ring-indigo-500 scale-110' : ''
                             }`}
                             style={{ backgroundColor: color }}
                           />
                         ))}
                       </div>
-                      <input
-                        type="text"
-                        value={editName}
-                        onChange={(e) => setEditName(e.target.value)}
-                        className="flex-1 px-3 py-2 bg-white border-2 border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                        autoFocus
-                      />
-                      <button
-                        onClick={() => handleSaveEdit(category.id)}
-                        className="p-2 text-emerald-600 hover:bg-emerald-100 rounded-xl transition-all"
-                      >
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                        </svg>
-                      </button>
-                      <button
-                        onClick={handleCancelEdit}
-                        className="p-2 text-slate-600 hover:bg-slate-200 rounded-xl transition-all"
-                      >
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                      </button>
-                    </>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="text"
+                          value={editName}
+                          onChange={(e) => setEditName(e.target.value)}
+                          className="flex-1 px-3 py-2 bg-white border-2 border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm"
+                          autoFocus
+                        />
+                        <button
+                          onClick={() => handleSaveEdit(category.id)}
+                          className="p-2 text-emerald-600 hover:bg-emerald-100 rounded-xl transition-all"
+                        >
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                          </svg>
+                        </button>
+                        <button
+                          onClick={handleCancelEdit}
+                          className="p-2 text-slate-600 hover:bg-slate-200 rounded-xl transition-all"
+                        >
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
+                      </div>
+                    </div>
                   ) : (
                     <>
                       <span

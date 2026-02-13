@@ -1,16 +1,16 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { generateId } from '../utils/helpers';
 import { useLanguage } from '../hooks/useLanguage';
-import { TaskFormProps, Task, Status, Priority } from '../types';
+import type { TaskFormProps, Task, TaskStatus, Priority, Category, TeamMember } from '../types';
 
 interface FormData {
   title: string;
   description: string;
-  category: string;
+  categoryId: string;
   priority: Priority;
-  status: Status;
+  status: TaskStatus;
   dueDate: string;
-  assignee: string;
+  assigneeId: string;
   estimatedHours: string;
   tags: string;
 }
@@ -32,11 +32,11 @@ export default function TaskForm({
   const [formData, setFormData] = useState<FormData>({
     title: '',
     description: '',
-    category: categories[0]?.id || '',
+    categoryId: categories[0]?.id || '',
     priority: 'medium',
     status: 'pending',
     dueDate: defaultDueDate || '',
-    assignee: '',
+    assigneeId: '',
     estimatedHours: '',
     tags: ''
   });
@@ -47,13 +47,13 @@ export default function TaskForm({
       setFormData({
         title: task.title,
         description: task.description || '',
-        category: task.category,
+        categoryId: task.categoryId || '',
         priority: task.priority,
         status: task.status,
         dueDate: task.dueDate || '',
-        assignee: task.assignee || '',
+        assigneeId: task.assigneeId || '',
         estimatedHours: task.estimatedHours ? task.estimatedHours.toString() : '',
-        tags: task.tags || ''
+        tags: Array.isArray(task.tags) ? task.tags.join(', ') : (task.tags || '')
       });
     } else if (defaultDueDate) {
       setFormData(prev => ({ ...prev, dueDate: defaultDueDate }));
@@ -73,7 +73,7 @@ export default function TaskForm({
     if (!formData.title.trim()) {
       newErrors.title = t('titleRequired');
     }
-    if (!formData.category) {
+    if (!formData.categoryId) {
       newErrors.category = t('categoryRequired');
     }
     setErrors(newErrors);
@@ -85,14 +85,18 @@ export default function TaskForm({
     if (!validate()) return;
 
     const now = new Date().toISOString();
+    const tagsArray = formData.tags.split(',').map(t => t.trim()).filter(Boolean);
+
     const taskData: Partial<Task> = {
-      ...formData,
       title: formData.title.trim(),
       description: formData.description.trim(),
+      categoryId: formData.categoryId || null,
+      priority: formData.priority,
+      status: formData.status,
       dueDate: formData.dueDate || null,
-      assignee: formData.assignee || null,
-      estimatedHours: parseFloat(formData.estimatedHours) || 0,
-      tags: formData.tags.trim(),
+      assigneeId: formData.assigneeId || null,
+      estimatedHours: parseFloat(formData.estimatedHours) || null,
+      tags: tagsArray,
       updatedAt: now
     };
 
@@ -104,18 +108,25 @@ export default function TaskForm({
       onSave({ ...task, ...taskData } as Task);
     } else {
       const newTask: Task = {
-        ...taskData,
         id: generateId(),
-        loggedHours: 0,
-        createdAt: now,
+        title: formData.title.trim(),
         description: formData.description.trim(),
+        categoryId: formData.categoryId || null,
+        priority: formData.priority,
+        status: formData.status,
         dueDate: formData.dueDate || null,
-        assignee: formData.assignee || null,
-        estimatedHours: parseFloat(formData.estimatedHours) || 0,
-        tags: formData.tags.trim(),
+        startDate: null,
+        estimatedHours: parseFloat(formData.estimatedHours) || null,
+        loggedHours: 0,
+        assigneeId: formData.assigneeId || null,
+        creatorId: '',
+        parentTaskId: null,
+        tags: tagsArray,
+        metadata: {},
+        createdAt: now,
+        updatedAt: now,
         completedAt: null,
-        comments: []
-      } as Task;
+      };
       onSave(newTask);
     }
   };
@@ -125,6 +136,15 @@ export default function TaskForm({
       onCancel();
     }
   };
+
+  const statusOptions: { value: TaskStatus; label: string }[] = [
+    { value: 'pending', label: '待处理' },
+    { value: 'in_progress', label: '进行中' },
+    { value: 'waiting', label: '等待确认' },
+    { value: 'completed', label: '已完成' },
+    { value: 'cancelled', label: '已取消' },
+    { value: 'deferred', label: '已延期' },
+  ];
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
@@ -192,15 +212,15 @@ export default function TaskForm({
                 {t('category')} *
               </label>
               <select
-                name="category"
-                value={formData.category}
+                name="categoryId"
+                value={formData.categoryId}
                 onChange={handleChange}
                 className={`w-full px-4 py-3 bg-slate-50 border-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all ${
                   errors.category ? 'border-red-400' : 'border-slate-200'
                 }`}
               >
                 <option value="">{t('selectCategory')}</option>
-                {categories.map(cat => (
+                {categories.map((cat: Category) => (
                   <option key={cat.id} value={cat.id}>
                     {cat.name}
                   </option>
@@ -216,13 +236,13 @@ export default function TaskForm({
                 {t('assignee')}
               </label>
               <select
-                name="assignee"
-                value={formData.assignee}
+                name="assigneeId"
+                value={formData.assigneeId}
                 onChange={handleChange}
                 className="w-full px-4 py-3 bg-slate-50 border-2 border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
               >
                 <option value="">{t('unassigned')}</option>
-                {teamMembers.map(member => (
+                {teamMembers.map((member: TeamMember) => (
                   <option key={member.id} value={member.id}>
                     {member.name}
                   </option>
@@ -259,10 +279,9 @@ export default function TaskForm({
                 onChange={handleChange}
                 className="w-full px-4 py-3 bg-slate-50 border-2 border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
               >
-                <option value="pending">{t('statusPending')}</option>
-                <option value="in-progress">{t('statusInProgress')}</option>
-                <option value="review">{t('statusReview')}</option>
-                <option value="completed">{t('statusCompleted')}</option>
+                {statusOptions.map(opt => (
+                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                ))}
               </select>
             </div>
           </div>

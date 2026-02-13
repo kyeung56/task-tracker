@@ -1,12 +1,18 @@
-import React from 'react';
 import { useLanguage } from '../hooks/useLanguage';
+import { usePermissions } from '../hooks/usePermissions';
 import LanguageSwitcher from './LanguageSwitcher';
-import { SidebarProps, TaskStats } from '../types';
+import UserSelector from './UserSelector';
+import type { SidebarProps, TeamMember } from '../types';
 
 interface NavItem {
   id: string;
   icon: string;
   label: string;
+}
+
+interface ExtendedSidebarProps extends SidebarProps {
+  onToggleWorkflowManager?: () => void;
+  teamMembers?: TeamMember[];
 }
 
 export default function Sidebar({
@@ -17,9 +23,12 @@ export default function Sidebar({
   onToggleCategoryManager,
   onToggleTeamManager,
   onExportCSV,
-  onExportJSON
-}: SidebarProps) {
+  onExportJSON,
+  onToggleWorkflowManager,
+  teamMembers = []
+}: ExtendedSidebarProps) {
   const { t } = useLanguage();
+  const { permissions, isAdmin } = usePermissions();
 
   const navItems: NavItem[] = [
     { id: 'tasks', icon: '📋', label: t('tasks') },
@@ -29,7 +38,7 @@ export default function Sidebar({
   ];
 
   return (
-    <aside className="w-64 bg-gradient-to-b from-slate-900 to-slate-800 text-white flex flex-col h-screen fixed left-0 top-0 shadow-2xl">
+    <aside className="w-64 bg-gradient-to-b from-slate-900 to-slate-800 text-white flex flex-col h-screen fixed left-0 top-0 shadow-2xl overflow-y-auto">
       {/* Logo */}
       <div className="p-6 border-b border-slate-700">
         <div className="flex items-center gap-3">
@@ -48,6 +57,12 @@ export default function Sidebar({
       {/* Language Switcher */}
       <div className="px-4 py-3 border-b border-slate-700">
         <LanguageSwitcher />
+      </div>
+
+      {/* User Selector */}
+      <div className="px-4 py-3 border-b border-slate-700">
+        <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">{t('selectRole') || '当前用户'}</h3>
+        <UserSelector teamMembers={teamMembers} />
       </div>
 
       {/* Stats Overview */}
@@ -114,47 +129,66 @@ export default function Sidebar({
 
         <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2 px-3 mt-6">{t('manageCategories').split(' ')[0]}</h3>
         <ul className="space-y-1">
-          <li>
-            <button
-              onClick={onToggleTeamManager}
-              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-300 hover:bg-slate-700/50 hover:text-white transition-all duration-200"
-            >
-              <span className="text-lg">👥</span>
-              <span className="font-medium">{t('team')}</span>
-            </button>
-          </li>
-          <li>
-            <button
-              onClick={onToggleCategoryManager}
-              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-300 hover:bg-slate-700/50 hover:text-white transition-all duration-200"
-            >
-              <span className="text-lg">🏷️</span>
-              <span className="font-medium">{t('categories')}</span>
-            </button>
-          </li>
+          {isAdmin && (
+            <li>
+              <button
+                onClick={onToggleTeamManager}
+                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-300 hover:bg-slate-700/50 hover:text-white transition-all duration-200"
+              >
+                <span className="text-lg">👥</span>
+                <span className="font-medium">{t('team')}</span>
+              </button>
+            </li>
+          )}
+          {permissions.canManageCategories && (
+            <li>
+              <button
+                onClick={onToggleCategoryManager}
+                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-300 hover:bg-slate-700/50 hover:text-white transition-all duration-200"
+              >
+                <span className="text-lg">🏷️</span>
+                <span className="font-medium">{t('categories')}</span>
+              </button>
+            </li>
+          )}
+          {isAdmin && onToggleWorkflowManager && (
+            <li>
+              <button
+                onClick={onToggleWorkflowManager}
+                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-300 hover:bg-slate-700/50 hover:text-white transition-all duration-200"
+              >
+                <span className="text-lg">⚙️</span>
+                <span className="font-medium">工作流设置</span>
+              </button>
+            </li>
+          )}
         </ul>
 
-        <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2 px-3 mt-6">{t('export')}</h3>
-        <ul className="space-y-1">
-          <li>
-            <button
-              onClick={onExportCSV}
-              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-300 hover:bg-slate-700/50 hover:text-white transition-all duration-200"
-            >
-              <span className="text-lg">📄</span>
-              <span className="font-medium">{t('exportCSV')}</span>
-            </button>
-          </li>
-          <li>
-            <button
-              onClick={onExportJSON}
-              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-300 hover:bg-slate-700/50 hover:text-white transition-all duration-200"
-            >
-              <span className="text-lg">💾</span>
-              <span className="font-medium">{t('exportJSON')}</span>
-            </button>
-          </li>
-        </ul>
+        {permissions.canExport && (
+          <>
+            <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2 px-3 mt-6">{t('export')}</h3>
+            <ul className="space-y-1">
+              <li>
+                <button
+                  onClick={onExportCSV}
+                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-300 hover:bg-slate-700/50 hover:text-white transition-all duration-200"
+                >
+                  <span className="text-lg">📄</span>
+                  <span className="font-medium">{t('exportCSV')}</span>
+                </button>
+              </li>
+              <li>
+                <button
+                  onClick={onExportJSON}
+                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-300 hover:bg-slate-700/50 hover:text-white transition-all duration-200"
+                >
+                  <span className="text-lg">💾</span>
+                  <span className="font-medium">{t('exportJSON')}</span>
+                </button>
+              </li>
+            </ul>
+          </>
+        )}
       </nav>
 
       {/* New Task Button */}

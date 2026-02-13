@@ -1,5 +1,5 @@
 import client, { apiCall } from './client';
-import type { WorkflowConfig, WorkflowStatus, WorkflowTransition } from '../types';
+import type { WorkflowConfig, WorkflowStatus, WorkflowTransition, ApiResponse } from '../types';
 
 export interface CreateWorkflowDTO {
   name: string;

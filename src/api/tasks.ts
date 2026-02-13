@@ -1,5 +1,5 @@
 import client, { apiCall } from './client';
-import type { Task, TaskFilters, PaginatedResponse, TaskHistory } from '../types';
+import type { Task, TaskFilters, PaginatedResponse, TaskHistory, StatusTimeLog, StatusTimeSummary, ApiResponse } from '../types';
 
 export interface CreateTaskDTO {
   title: string;
@@ -80,6 +80,16 @@ export const tasksApi = {
   // Get task history
   async getHistory(id: string): Promise<TaskHistory[]> {
     return apiCall(client.get<ApiResponse<TaskHistory[]>>(`/tasks/${id}/history`));
+  },
+
+  // Get task status time logs
+  async getStatusTimes(taskId: string): Promise<StatusTimeLog[]> {
+    return apiCall(client.get<ApiResponse<StatusTimeLog[]>>(`/tasks/${taskId}/status-times`));
+  },
+
+  // Get task status time summary
+  async getStatusSummary(taskId: string): Promise<StatusTimeSummary[]> {
+    return apiCall(client.get<ApiResponse<StatusTimeSummary[]>>(`/tasks/${taskId}/status-summary`));
   },
 
   // Get tasks for calendar

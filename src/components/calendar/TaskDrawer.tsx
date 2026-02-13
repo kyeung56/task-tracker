@@ -1,4 +1,5 @@
 import React from 'react';
+import { useLanguage } from '../../hooks/useLanguage';
 import type { Task } from '../../types';
 import { Badge, Avatar } from '../common';
 import PriorityBadge from '../tasks/PriorityBadge';
@@ -12,6 +13,8 @@ interface TaskDrawerProps {
 }
 
 const TaskDrawer: React.FC<TaskDrawerProps> = ({ date, tasks, onTaskClick, onCreateTask }) => {
+  const { t } = useLanguage();
+
   if (!date) return null;
 
   const formatDate = (d: Date) => {
@@ -38,7 +41,7 @@ const TaskDrawer: React.FC<TaskDrawerProps> = ({ date, tasks, onTaskClick, onCre
           {formatDate(date)}
         </h3>
         <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-          {tasks.length} task{tasks.length !== 1 ? 's' : ''}
+          {tasks.length} {t('tasksDue')}
         </p>
       </div>
 
@@ -59,13 +62,13 @@ const TaskDrawer: React.FC<TaskDrawerProps> = ({ date, tasks, onTaskClick, onCre
                 d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
               />
             </svg>
-            <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">No tasks for this day</p>
+            <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">{t('noTasksForDay')}</p>
             {onCreateTask && (
               <button
                 onClick={() => onCreateTask(date)}
                 className="mt-3 text-sm text-indigo-600 dark:text-indigo-400 hover:underline"
               >
-                Create a task
+                {t('createTaskBtn')}
               </button>
             )}
           </div>
@@ -140,7 +143,7 @@ const TaskDrawer: React.FC<TaskDrawerProps> = ({ date, tasks, onTaskClick, onCre
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
             </svg>
-            Add Task
+            {t('addTaskBtn')}
           </button>
         </div>
       )}

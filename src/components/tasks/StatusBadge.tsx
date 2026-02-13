@@ -13,31 +13,27 @@ const StatusBadge: React.FC<StatusBadgeProps> = ({ status, size = 'md', classNam
   const statusConfig: Record<TaskStatus, { variant: 'default' | 'primary' | 'success' | 'warning' | 'danger' | 'info'; label: string }> = {
     pending: {
       variant: 'default',
-      label: 'Pending',
+      label: '待处理',
     },
     in_progress: {
       variant: 'primary',
-      label: 'In Progress',
+      label: '进行中',
     },
     waiting: {
       variant: 'warning',
-      label: 'Waiting',
-    },
-    review: {
-      variant: 'info',
-      label: 'Review',
+      label: '等待确认',
     },
     completed: {
       variant: 'success',
-      label: 'Completed',
+      label: '已完成',
     },
     cancelled: {
       variant: 'danger',
-      label: 'Cancelled',
+      label: '已取消',
     },
     deferred: {
-      variant: 'warning',
-      label: 'Deferred',
+      variant: 'info',
+      label: '已延期',
     },
   };
 

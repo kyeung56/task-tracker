@@ -60,6 +60,7 @@ export const translations: Record<string, Translations> = {
     // Task Item
     overdueLabel: 'Overdue',
     dueLabel: 'Due',
+    dueToday: 'Due Today',
 
     // Filter Bar
     searchPlaceholder: 'Search tasks, tags...',
@@ -104,6 +105,20 @@ export const translations: Record<string, Translations> = {
     noTasksAssigned: 'No tasks assigned yet. Assign team members to see performance metrics.',
     tasksByCategory: 'Tasks by Category',
     noCategoriesWithTasks: 'No categories with tasks yet.',
+    noData: 'No data available',
+    timeTracking: 'Time Tracking',
+    statusBreakdown: 'Status Breakdown',
+    efficiency: 'Efficiency',
+    // Chart titles
+    completionTrend: 'Completion Trend',
+    teamWorkload: 'Team Workload',
+    overdueTrend: 'Overdue Trend',
+    chartCreated: 'Created',
+    chartCompleted: 'Completed',
+    chartActive: 'Active',
+    chartTotal: 'Total',
+    noOverdueTasks: 'No overdue tasks',
+    more: 'more',
 
     // Team Manager
     teamMembers: 'Team Members',
@@ -115,6 +130,16 @@ export const translations: Record<string, Translations> = {
     role: 'Role',
     addMember: 'Add Member',
     confirmRemoveMember: 'Are you sure you want to remove this team member?',
+
+    // User & Permissions
+    selectUser: 'Select User...',
+    selectRole: 'Switch Role',
+    noPermission: 'No Permission',
+    admin: 'Admin',
+    manager: 'Manager',
+    developer: 'Developer',
+    designer: 'Designer',
+    qa: 'QA',
     roles: {
       admin: 'Admin',
       manager: 'Manager',
@@ -140,6 +165,41 @@ export const translations: Record<string, Translations> = {
 
     // Confirmations
     confirmDeleteTask: 'Are you sure you want to delete this task?',
+
+    // Comments
+    save: 'Save',
+    sending: 'Sending...',
+    edit: 'Edit',
+    delete: 'Delete',
+
+    // Empty States
+    noTasksYet: 'No tasks yet',
+    createTaskBtn: 'Create Task',
+    noTasksMatch: 'No tasks matching',
+    tryDifferentSearch: 'Try a different search term.',
+    noNotifications: 'No notifications',
+    allCaughtUp: "You're all caught up! New notifications will appear here.",
+    noComments: 'No comments',
+    beFirstComment: 'Be the first to comment on this task.',
+    noResults: 'No results found',
+    getStartedFirstTask: 'Get started by creating your first task',
+
+    // Calendar
+    noTasksForDay: 'No tasks for this day',
+    addTaskBtn: 'Add Task',
+
+    // Comments
+    writeComment: 'Write a comment, @ to mention someone...',
+    send: 'Send',
+    pressToSend: 'Press ⌘ + Enter to send',
+    justNow: 'Just now',
+    minutesAgo: 'm ago',
+    hoursAgo: 'h ago',
+    daysAgo: 'd ago',
+    edited: 'edited',
+    showMore: 'Show more',
+    showLess: 'Show less',
+    reply: 'Reply',
   },
 
   'zh-TW': {
@@ -201,6 +261,7 @@ export const translations: Record<string, Translations> = {
     // Task Item
     overdueLabel: '逾期',
     dueLabel: '到期',
+    dueToday: '今日到期',
 
     // Filter Bar
     searchPlaceholder: '搜尋任務、標籤...',
@@ -245,6 +306,20 @@ export const translations: Record<string, Translations> = {
     noTasksAssigned: '尚未指派任務。指派團隊成員以查看績效指標。',
     tasksByCategory: '依類別分類的任務',
     noCategoriesWithTasks: '尚無包含任務的類別。',
+    noData: '暫無資料',
+    timeTracking: '時間追蹤',
+    statusBreakdown: '狀態分佈',
+    efficiency: '效率',
+    // Chart titles
+    completionTrend: '完成率趨勢',
+    teamWorkload: '團隊工作量',
+    overdueTrend: '逾期趨勢',
+    chartCreated: '新增',
+    chartCompleted: '已完成',
+    chartActive: '進行中',
+    chartTotal: '總計',
+    noOverdueTasks: '無逾期任務',
+    more: '更多',
 
     // Team Manager
     teamMembers: '團隊成員',
@@ -256,6 +331,16 @@ export const translations: Record<string, Translations> = {
     role: '職位',
     addMember: '新增成員',
     confirmRemoveMember: '確定要移除此團隊成員嗎？',
+
+    // User & Permissions
+    selectUser: '選擇使用者...',
+    selectRole: '切換角色',
+    noPermission: '無權限',
+    admin: '管理員',
+    manager: '經理',
+    developer: '開發者',
+    designer: '設計師',
+    qa: '測試人員',
     roles: {
       admin: '管理員',
       manager: '經理',
@@ -281,6 +366,41 @@ export const translations: Record<string, Translations> = {
 
     // Confirmations
     confirmDeleteTask: '確定要刪除此任務嗎？',
+
+    // Comments
+    save: '儲存',
+    sending: '發送中...',
+    edit: '編輯',
+    delete: '刪除',
+
+    // Empty States
+    noTasksYet: '尚無任務',
+    createTaskBtn: '建立任務',
+    noTasksMatch: '找不到符合條件的任務',
+    tryDifferentSearch: '請嘗試其他搜尋條件。',
+    noNotifications: '沒有通知',
+    allCaughtUp: '您已全部閱讀完畢！新通知會顯示在這裡。',
+    noComments: '沒有評論',
+    beFirstComment: '成為第一個評論此任務的人。',
+    noResults: '沒有找到結果',
+    getStartedFirstTask: '建立您的第一個任務開始使用',
+
+    // Calendar
+    noTasksForDay: '此日期沒有任務',
+    addTaskBtn: '新增任務',
+
+    // Comments
+    writeComment: '撰寫評論，@ 提及某人...',
+    send: '發送',
+    pressToSend: '按 ⌘ + Enter 發送',
+    justNow: '剛剛',
+    minutesAgo: '分鐘前',
+    hoursAgo: '小時前',
+    daysAgo: '天前',
+    edited: '已編輯',
+    showMore: '顯示更多',
+    showLess: '顯示較少',
+    reply: '回覆',
   },
 
   'zh-CN': {
@@ -342,6 +462,7 @@ export const translations: Record<string, Translations> = {
     // Task Item
     overdueLabel: '逾期',
     dueLabel: '到期',
+    dueToday: '今日到期',
 
     // Filter Bar
     searchPlaceholder: '搜索任务、标签...',
@@ -386,6 +507,20 @@ export const translations: Record<string, Translations> = {
     noTasksAssigned: '尚未指派任务。指派团队成员以查看绩效指标。',
     tasksByCategory: '按类别分类的任务',
     noCategoriesWithTasks: '尚无包含任务的类别。',
+    noData: '暂无数据',
+    timeTracking: '时间追踪',
+    statusBreakdown: '状态分布',
+    efficiency: '效率',
+    // Chart titles
+    completionTrend: '完成率趋势',
+    teamWorkload: '团队工作量',
+    overdueTrend: '逾期趋势',
+    chartCreated: '新增',
+    chartCompleted: '已完成',
+    chartActive: '进行中',
+    chartTotal: '总计',
+    noOverdueTasks: '无逾期任务',
+    more: '更多',
 
     // Team Manager
     teamMembers: '团队成员',
@@ -397,6 +532,16 @@ export const translations: Record<string, Translations> = {
     role: '职位',
     addMember: '添加成员',
     confirmRemoveMember: '确定要移除此团队成员吗？',
+
+    // User & Permissions
+    selectUser: '选择用户...',
+    selectRole: '切换角色',
+    noPermission: '无权限',
+    admin: '管理员',
+    manager: '经理',
+    developer: '开发者',
+    designer: '设计师',
+    qa: '测试人员',
     roles: {
       admin: '管理员',
       manager: '经理',
@@ -422,6 +567,41 @@ export const translations: Record<string, Translations> = {
 
     // Confirmations
     confirmDeleteTask: '确定要删除此任务吗？',
+
+    // Comments
+    save: '保存',
+    sending: '发送中...',
+    edit: '编辑',
+    delete: '删除',
+
+    // Empty States
+    noTasksYet: '尚无任务',
+    createTaskBtn: '创建任务',
+    noTasksMatch: '找不到符合条件的任务',
+    tryDifferentSearch: '请尝试其他搜索条件。',
+    noNotifications: '没有通知',
+    allCaughtUp: '您已全部阅读完毕！新通知会显示在这里。',
+    noComments: '没有评论',
+    beFirstComment: '成为第一个评论此任务的人。',
+    noResults: '没有找到结果',
+    getStartedFirstTask: '创建您的第一个任务开始使用',
+
+    // Calendar
+    noTasksForDay: '此日期没有任务',
+    addTaskBtn: '添加任务',
+
+    // Comments
+    writeComment: '撰写评论，@ 提及某人...',
+    send: '发送',
+    pressToSend: '按 ⌘ + Enter 发送',
+    justNow: '刚刚',
+    minutesAgo: '分钟前',
+    hoursAgo: '小时前',
+    daysAgo: '天前',
+    edited: '已编辑',
+    showMore: '显示更多',
+    showLess: '显示较少',
+    reply: '回复',
   }
 }
 

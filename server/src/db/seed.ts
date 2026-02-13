@@ -122,7 +122,7 @@ export async function seedDatabase() {
     insertCategory.run(category);
   }
 
-  // Insert default workflow config
+  // Insert default workflow config (6 statuses)
   const defaultWorkflow = {
     id: uuidv4(),
     name: 'Default Workflow',
@@ -132,16 +132,14 @@ export async function seedDatabase() {
       { id: 'pending', name: '待处理', color: '#6b7280', order: 1 },
       { id: 'in_progress', name: '进行中', color: '#3b82f6', order: 2 },
       { id: 'waiting', name: '等待确认', color: '#f59e0b', order: 3 },
-      { id: 'review', name: '审核中', color: '#8b5cf6', order: 4 },
-      { id: 'completed', name: '已完成', color: '#10b981', order: 5 },
-      { id: 'cancelled', name: '已取消', color: '#ef4444', order: 6 },
-      { id: 'deferred', name: '已延期', color: '#f97316', order: 7 },
+      { id: 'completed', name: '已完成', color: '#10b981', order: 4 },
+      { id: 'cancelled', name: '已取消', color: '#ef4444', order: 5 },
+      { id: 'deferred', name: '已延期', color: '#f97316', order: 6 },
     ]),
     transitions: JSON.stringify([
       { from: 'pending', to: ['in_progress', 'cancelled'] },
-      { from: 'in_progress', to: ['waiting', 'review', 'completed', 'deferred', 'cancelled'] },
+      { from: 'in_progress', to: ['waiting', 'completed', 'deferred', 'cancelled'] },
       { from: 'waiting', to: ['in_progress', 'completed', 'deferred'] },
-      { from: 'review', to: ['in_progress', 'completed', 'deferred'] },
       { from: 'deferred', to: ['in_progress', 'cancelled'] },
     ]),
     role_restrictions: JSON.stringify({}),

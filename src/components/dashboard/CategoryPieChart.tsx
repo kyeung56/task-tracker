@@ -1,4 +1,5 @@
 import React from 'react';
+import { useLanguage } from '../../hooks/useLanguage';
 import type { DashboardCategoryStat } from '../../types';
 
 interface CategoryPieChartProps {
@@ -7,14 +8,16 @@ interface CategoryPieChartProps {
 }
 
 const CategoryPieChart: React.FC<CategoryPieChartProps> = ({ data, className = '' }) => {
+  const { t } = useLanguage();
+
   if (data.length === 0) {
     return (
       <div className={`bg-white dark:bg-gray-800 rounded-lg p-4 ${className}`}>
         <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-          Tasks by Category
+          {t('tasksByCategory')}
         </h3>
         <div className="flex items-center justify-center h-32 text-gray-500 dark:text-gray-400">
-          No data available
+          {t('noData')}
         </div>
       </div>
     );
@@ -62,7 +65,7 @@ const CategoryPieChart: React.FC<CategoryPieChartProps> = ({ data, className = '
   return (
     <div className={`bg-white dark:bg-gray-800 rounded-lg p-4 ${className}`}>
       <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-        Tasks by Category
+        {t('tasksByCategory')}
       </h3>
 
       <div className="flex items-center justify-center">
@@ -84,7 +87,7 @@ const CategoryPieChart: React.FC<CategoryPieChartProps> = ({ data, className = '
             {total}
           </text>
           <text x="80" y="95" textAnchor="middle" className="text-xs fill-gray-500">
-            Total
+            {t('chartTotal')}
           </text>
         </svg>
 
@@ -106,7 +109,7 @@ const CategoryPieChart: React.FC<CategoryPieChartProps> = ({ data, className = '
           ))}
           {data.length > 5 && (
             <div className="text-xs text-gray-500 dark:text-gray-400">
-              +{data.length - 5} more
+              +{data.length - 5} {t('more')}
             </div>
           )}
         </div>

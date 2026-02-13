@@ -365,6 +365,12 @@ router.post('/', authMiddleware, (req: AuthRequest, res) => {
       VALUES (?, ?, ?, 'created')
     `).run(uuidv4(), taskId, req.user!.id);
 
+    // Create initial status time log
+    db.prepare(`
+      INSERT INTO status_time_logs (id, task_id, from_status, to_status, entered_at, user_id)
+      VALUES (?, ?, NULL, ?, ?, ?)
+    `).run(uuidv4(), taskId, status, new Date().toISOString(), req.user!.id);
+
     // Send notification to assignee
     if (assigneeId && assigneeId !== req.user!.id) {
       sendNotificationToUser(assigneeId, {
@@ -585,7 +591,7 @@ router.put('/:id', authMiddleware, (req: AuthRequest, res) => {
   }
 });
 
-// Update task status
+// Update task status with time tracking
 router.put('/:id/status', authMiddleware, (req: AuthRequest, res) => {
   try {
     const { id } = req.params;
@@ -612,8 +618,43 @@ router.put('/:id/status', authMiddleware, (req: AuthRequest, res) => {
       });
     }
 
-    const completedAt = status === 'completed' ? new Date().toISOString() : null;
+    // Skip if status is the same
+    if (currentTask.status === status) {
+      return res.json({
+        success: true,
+        data: { id, status, completedAt: currentTask.completed_at },
+      });
+    }
 
+    const now = new Date().toISOString();
+    const completedAt = status === 'completed' ? now : null;
+
+    // Close previous status time log
+    const previousLog = db.prepare(`
+      SELECT id, entered_at FROM status_time_logs
+      WHERE task_id = ? AND exited_at IS NULL
+      ORDER BY entered_at DESC LIMIT 1
+    `).get(id) as any;
+
+    if (previousLog) {
+      const enteredAt = new Date(previousLog.entered_at);
+      const exitedAt = new Date(now);
+      const durationSeconds = Math.floor((exitedAt.getTime() - enteredAt.getTime()) / 1000);
+
+      db.prepare(`
+        UPDATE status_time_logs
+        SET exited_at = ?, duration_seconds = ?
+        WHERE id = ?
+      `).run(now, durationSeconds, previousLog.id);
+    }
+
+    // Create new status time log
+    db.prepare(`
+      INSERT INTO status_time_logs (id, task_id, from_status, to_status, entered_at, user_id)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `).run(uuidv4(), id, currentTask.status, status, now, req.user!.id);
+
+    // Update task status
     db.prepare(`
       UPDATE tasks
       SET status = ?, completed_at = ?, updated_at = CURRENT_TIMESTAMP
@@ -765,4 +806,106 @@ router.get('/:id/history', authMiddleware, (req: AuthRequest, res) => {
   }
 });
 
+// Get task status time logs
+router.get('/:id/status-times', authMiddleware, (req: AuthRequest, res) => {
+  try {
+    const { id } = req.params;
+
+    const statusTimes = db.prepare(`
+      SELECT stl.*, u.name as user_name, u.avatar_url as user_avatar
+      FROM status_time_logs stl
+      LEFT JOIN users u ON stl.user_id = u.id
+      WHERE stl.task_id = ?
+      ORDER BY stl.entered_at DESC
+    `).all(id) as any[];
+
+    res.json({
+      success: true,
+      data: statusTimes.map((st) => ({
+        id: st.id,
+        taskId: st.task_id,
+        fromStatus: st.from_status,
+        toStatus: st.to_status,
+        enteredAt: st.entered_at,
+        exitedAt: st.exited_at,
+        durationSeconds: st.duration_seconds,
+        userId: st.user_id,
+        user: st.user_id ? { id: st.user_id, name: st.user_name, avatarUrl: st.user_avatar } : null,
+        createdAt: st.created_at,
+      })),
+    });
+  } catch (error) {
+    console.error('Get status times error:', error);
+    res.status(500).json({
+      success: false,
+      error: {
+        code: 'GET_STATUS_TIMES_ERROR',
+        message: 'Failed to get status time logs',
+      },
+    });
+  }
+});
+
+// Get task status time summary
+router.get('/:id/status-summary', authMiddleware, (req: AuthRequest, res) => {
+  try {
+    const { id } = req.params;
+
+    const summary = db.prepare(`
+      SELECT
+        to_status as status,
+        SUM(duration_seconds) as total_time_seconds,
+        COUNT(*) as visit_count
+      FROM status_time_logs
+      WHERE task_id = ? AND duration_seconds IS NOT NULL
+      GROUP BY to_status
+      ORDER BY total_time_seconds DESC
+    `).all(id) as any[];
+
+    // Get current status time (not yet exited)
+    const currentStatusLog = db.prepare(`
+      SELECT to_status, entered_at
+      FROM status_time_logs
+      WHERE task_id = ? AND exited_at IS NULL
+      ORDER BY entered_at DESC LIMIT 1
+    `).get(id) as any;
+
+    const result = summary.map((s) => ({
+      status: s.status,
+      totalTimeSeconds: s.total_time_seconds || 0,
+      visitCount: s.visit_count || 0,
+    }));
+
+    // Add current status ongoing time
+    if (currentStatusLog) {
+      const existingEntry = result.find((r: any) => r.status === currentStatusLog.to_status);
+      if (existingEntry) {
+        // Add current ongoing time to the total
+        const currentDuration = Math.floor((Date.now() - new Date(currentStatusLog.entered_at).getTime()) / 1000);
+        existingEntry.totalTimeSeconds += currentDuration;
+      } else {
+        const currentDuration = Math.floor((Date.now() - new Date(currentStatusLog.entered_at).getTime()) / 1000);
+        result.push({
+          status: currentStatusLog.to_status,
+          totalTimeSeconds: currentDuration,
+          visitCount: 1,
+        });
+      }
+    }
+
+    res.json({
+      success: true,
+      data: result,
+    });
+  } catch (error) {
+    console.error('Get status summary error:', error);
+    res.status(500).json({
+      success: false,
+      error: {
+        code: 'GET_STATUS_SUMMARY_ERROR',
+        message: 'Failed to get status time summary',
+      },
+    });
+  }
+});
 export default router;

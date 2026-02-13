@@ -1,4 +1,5 @@
 import React from 'react';
+import { useLanguage } from '../../hooks/useLanguage';
 import type { DashboardAssigneeStat, TeamWorkload } from '../../types';
 
 interface WorkloadChartProps {
@@ -7,14 +8,16 @@ interface WorkloadChartProps {
 }
 
 const WorkloadChart: React.FC<WorkloadChartProps> = ({ data, className = '' }) => {
+  const { t } = useLanguage();
+
   if (data.length === 0) {
     return (
       <div className={`bg-white dark:bg-gray-800 rounded-lg p-4 ${className}`}>
         <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-          Team Workload
+          {t('teamWorkload')}
         </h3>
         <div className="flex items-center justify-center h-32 text-gray-500 dark:text-gray-400">
-          No data available
+          {t('noData')}
         </div>
       </div>
     );
@@ -38,7 +41,7 @@ const WorkloadChart: React.FC<WorkloadChartProps> = ({ data, className = '' }) =
   return (
     <div className={`bg-white dark:bg-gray-800 rounded-lg p-4 ${className}`}>
       <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-        Team Workload
+        {t('teamWorkload')}
       </h3>
 
       <div className="space-y-4">
@@ -88,11 +91,11 @@ const WorkloadChart: React.FC<WorkloadChartProps> = ({ data, className = '' }) =
       <div className="flex items-center justify-center gap-6 mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
         <div className="flex items-center gap-2">
           <div className="w-3 h-3 rounded bg-green-400" />
-          <span className="text-sm text-gray-600 dark:text-gray-400">Completed</span>
+          <span className="text-sm text-gray-600 dark:text-gray-400">{t('chartCompleted')}</span>
         </div>
         <div className="flex items-center gap-2">
           <div className="w-3 h-3 rounded bg-indigo-400" />
-          <span className="text-sm text-gray-600 dark:text-gray-400">Active</span>
+          <span className="text-sm text-gray-600 dark:text-gray-400">{t('chartActive')}</span>
         </div>
       </div>
     </div>

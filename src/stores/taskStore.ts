@@ -250,7 +250,7 @@ function calculateStats(tasks: Task[]): TaskStats {
     total: tasks.length,
     completed: tasks.filter((t) => t.status === 'completed').length,
     inProgress: tasks.filter((t) => t.status === 'in_progress' || t.status === 'waiting').length,
-    review: tasks.filter((t) => t.status === 'review').length,
+    review: tasks.filter((t) => t.status === 'waiting').length, // 'waiting' replaces 'review' conceptually
     pending: tasks.filter((t) => t.status === 'pending').length,
     overdue: tasks.filter(
       (t) => t.dueDate && new Date(t.dueDate) < new Date() && t.status !== 'completed' && t.status !== 'cancelled'

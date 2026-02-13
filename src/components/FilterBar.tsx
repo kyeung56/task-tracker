@@ -1,6 +1,5 @@
-import React from 'react';
 import { useLanguage } from '../hooks/useLanguage';
-import { FilterBarProps } from '../types';
+import type { FilterBarProps } from '../types';
 
 export default function FilterBar({
   filters,
@@ -103,10 +102,12 @@ export default function FilterBar({
             className="px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm font-medium text-slate-600 min-w-[140px]"
           >
             <option value="">{t('allStatuses')}</option>
-            <option value="pending">{t('statusPending')}</option>
-            <option value="in-progress">{t('statusInProgress')}</option>
-            <option value="review">{t('statusReview')}</option>
-            <option value="completed">{t('statusCompleted')}</option>
+            <option value="pending">待处理</option>
+            <option value="in_progress">进行中</option>
+            <option value="waiting">等待确认</option>
+            <option value="completed">已完成</option>
+            <option value="cancelled">已取消</option>
+            <option value="deferred">已延期</option>
           </select>
 
           <select

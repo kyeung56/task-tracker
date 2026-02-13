@@ -1,4 +1,5 @@
 import React from 'react';
+import { useLanguage } from '../../hooks/useLanguage';
 import type { DashboardOverdueTrend } from '../../types';
 
 interface OverdueTrendChartProps {
@@ -12,14 +13,16 @@ const OverdueTrendChart: React.FC<OverdueTrendChartProps> = ({
   height = 150,
   className = '',
 }) => {
+  const { t } = useLanguage();
+
   if (data.length === 0) {
     return (
       <div className={`bg-white dark:bg-gray-800 rounded-lg p-4 ${className}`}>
         <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-          Overdue Trend
+          {t('overdueTrend')}
         </h3>
         <div className="flex items-center justify-center h-24 text-gray-500 dark:text-gray-400">
-          No overdue tasks
+          {t('noOverdueTasks')}
         </div>
       </div>
     );
@@ -36,7 +39,7 @@ const OverdueTrendChart: React.FC<OverdueTrendChartProps> = ({
   return (
     <div className={`bg-white dark:bg-gray-800 rounded-lg p-4 ${className}`}>
       <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-        Overdue Trend
+        {t('overdueTrend')}
       </h3>
 
       <div className="overflow-x-auto">

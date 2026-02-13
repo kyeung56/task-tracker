@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { useLocalStorage } from './hooks/useLocalStorage';
 import { useLanguage } from './hooks/useLanguage';
 import { defaultCategories, filterTasks, sortTasks, exportToCSV, exportToJSON } from './utils/helpers';
@@ -11,7 +11,8 @@ import TeamManager from './components/TeamManager';
 import Dashboard from './components/Dashboard';
 import Calendar from './components/Calendar';
 import KanbanBoard from './components/KanbanBoard';
-import { Task, Category, TeamMember, FilterState, TaskStats, Status } from './types';
+import WorkflowManager from './components/workflow/WorkflowManager';
+import type { Task, Category, TeamMember, LegacyFilterState, TaskStats, TaskStatus } from './types';
 
 export default function App() {
   const { t } = useLanguage();
@@ -24,9 +25,10 @@ export default function App() {
   const [defaultDueDate, setDefaultDueDate] = useState<string | null>(null);
   const [showCategoryManager, setShowCategoryManager] = useState<boolean>(false);
   const [showTeamManager, setShowTeamManager] = useState<boolean>(false);
+  const [showWorkflowManager, setShowWorkflowManager] = useState<boolean>(false);
   const [activeView, setActiveView] = useState<string>('tasks');
 
-  const [filters, setFilters] = useState<FilterState>({
+  const [filters, setFilters] = useState<LegacyFilterState>({
     search: '',
     category: '',
     priority: '',
@@ -61,7 +63,7 @@ export default function App() {
     }
   };
 
-  const handleStatusChange = (id: string, newStatus: Status) => {
+  const handleStatusChange = (id: string, newStatus: TaskStatus) => {
     const now = new Date().toISOString();
     setTasks(tasks.map(t =>
       t.id === id
@@ -92,11 +94,11 @@ export default function App() {
   const taskStats: TaskStats = useMemo(() => {
     const total = tasks.length;
     const completed = tasks.filter(t => t.status === 'completed').length;
-    const inProgress = tasks.filter(t => t.status === 'in-progress').length;
-    const review = tasks.filter(t => t.status === 'review').length;
+    const inProgress = tasks.filter(t => t.status === 'in_progress' || t.status === 'waiting').length;
+    const review = tasks.filter(t => t.status === 'waiting').length;
     const pending = tasks.filter(t => t.status === 'pending').length;
     const overdue = tasks.filter(t => {
-      if (!t.dueDate || t.status === 'completed') return false;
+      if (!t.dueDate || t.status === 'completed' || t.status === 'cancelled') return false;
       return new Date(t.dueDate) < new Date();
     }).length;
     return { total, completed, inProgress, review, pending, overdue };
@@ -122,8 +124,10 @@ export default function App() {
         onNewTask={() => setShowTaskForm(true)}
         onToggleCategoryManager={() => setShowCategoryManager(true)}
         onToggleTeamManager={() => setShowTeamManager(true)}
+        onToggleWorkflowManager={() => setShowWorkflowManager(true)}
         onExportCSV={() => exportToCSV(tasks, categories, teamMembers)}
         onExportJSON={() => exportToJSON(tasks, categories, teamMembers)}
+        teamMembers={teamMembers}
       />
 
       {/* Main Content */}
@@ -212,6 +216,12 @@ export default function App() {
           teamMembers={teamMembers}
           setTeamMembers={setTeamMembers}
           onClose={() => setShowTeamManager(false)}
+        />
+      )}
+
+      {showWorkflowManager && (
+        <WorkflowManager
+          onClose={() => setShowWorkflowManager(false)}
         />
       )}
     </div>

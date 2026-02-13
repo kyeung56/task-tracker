@@ -62,3 +62,61 @@ body {
 .gradient-text {
   @apply bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent;
 }
+
+/* Urgency pulse animations */
+@keyframes urgentPulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(239, 68, 68, 0);
+  }
+}
+
+@keyframes todayPulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 6px rgba(245, 158, 11, 0);
+  }
+}
+
+@keyframes soonPulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(249, 115, 22, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 0 4px rgba(249, 115, 22, 0);
+  }
+}
+
+.animate-urgent-pulse {
+  animation: urgentPulse 2s ease-in-out infinite;
+}
+
+.animate-today-pulse {
+  animation: todayPulse 2.5s ease-in-out infinite;
+}
+
+.animate-soon-pulse {
+  animation: soonPulse 3s ease-in-out infinite;
+}
+
+/* Priority badge enhancements */
+.priority-critical {
+  @apply bg-red-500 text-white font-bold shadow-lg shadow-red-500/30;
+  animation: urgentPulse 2s ease-in-out infinite;
+}
+
+.priority-high {
+  @apply bg-orange-500 text-white font-semibold shadow-md shadow-orange-500/20;
+}
+
+.priority-medium {
+  @apply bg-yellow-100 text-yellow-800 font-medium;
+}
+
+.priority-low {
+  @apply bg-gray-100 text-gray-600 font-medium;
+}

@@ -1,5 +1,5 @@
 import client, { apiCall } from './client';
-import type { Category } from '../types';
+import type { Category, ApiResponse } from '../types';
 
 export interface CreateCategoryDTO {
   name: string;

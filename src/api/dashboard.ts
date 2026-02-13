@@ -1,5 +1,5 @@
 import client, { apiCall } from './client';
-import type { DashboardStats, TeamWorkload } from '../types';
+import type { DashboardStats, TeamWorkload, ApiResponse } from '../types';
 
 export type Period = 'week' | 'month' | 'quarter' | 'custom';
 

@@ -3,11 +3,14 @@ import ReactDOM from 'react-dom/client'
 import App from './App'
 import './index.css'
 import { LanguageProvider } from './hooks/useLanguage'
+import { PermissionProvider } from './hooks/usePermissions'
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <LanguageProvider>
-      <App />
+      <PermissionProvider>
+        <App />
+      </PermissionProvider>
     </LanguageProvider>
   </React.StrictMode>,
 )

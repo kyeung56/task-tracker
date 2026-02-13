@@ -8,7 +8,6 @@ export type TaskStatus =
   | 'pending'
   | 'in_progress'
   | 'waiting'
-  | 'review'
   | 'completed'
   | 'cancelled'
   | 'deferred';
@@ -157,6 +156,29 @@ export interface TaskHistory {
   newValue: string | null;
   metadata: Record<string, unknown>;
   createdAt: string;
+}
+
+// ============================================
+// Status Time Log Types
+// ============================================
+
+export interface StatusTimeLog {
+  id: string;
+  taskId: string;
+  fromStatus: TaskStatus | null;
+  toStatus: TaskStatus;
+  enteredAt: string;
+  exitedAt: string | null;
+  durationSeconds: number | null;
+  userId: string;
+  user?: User | null;
+  createdAt: string;
+}
+
+export interface StatusTimeSummary {
+  status: TaskStatus;
+  totalTimeSeconds: number;
+  visitCount: number;
 }
 
 // ============================================
@@ -429,8 +451,8 @@ export interface SidebarProps {
 }
 
 export interface FilterBarProps {
-  filters: FilterState | LegacyFilterState;
-  setFilters: React.Dispatch<React.SetStateAction<FilterState | LegacyFilterState>>;
+  filters: LegacyFilterState;
+  setFilters: React.Dispatch<React.SetStateAction<LegacyFilterState>>;
   sortBy: string;
   setSortBy: React.Dispatch<React.SetStateAction<string>>;
   categories: Category[];
@@ -443,7 +465,7 @@ export interface TaskListProps {
   teamMembers: TeamMember[] | User[];
   onEdit: (task: Task) => void;
   onDelete: (id: string) => void;
-  onStatusChange: (id: string, status: TaskStatus | Status) => void;
+  onStatusChange: (id: string, status: TaskStatus) => void;
   onTimeUpdate: (taskId: string, loggedHours: number) => void;
 }
 
@@ -453,7 +475,7 @@ export interface TaskItemProps {
   teamMembers: TeamMember[] | User[];
   onEdit: (task: Task) => void;
   onDelete: (id: string) => void;
-  onStatusChange: (id: string, status: TaskStatus | Status) => void;
+  onStatusChange: (id: string, status: TaskStatus) => void;
   onTimeUpdate: (taskId: string, loggedHours: number) => void;
 }
 

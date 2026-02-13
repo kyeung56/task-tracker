@@ -155,6 +155,21 @@ export function initializeDatabase() {
     )
   `);
 
+  // Status time logs table
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS status_time_logs (
+      id TEXT PRIMARY KEY,
+      task_id TEXT NOT NULL REFERENCES tasks(id) ON DELETE CASCADE,
+      from_status TEXT,
+      to_status TEXT NOT NULL,
+      entered_at TEXT NOT NULL,
+      exited_at TEXT,
+      duration_seconds INTEGER,
+      user_id TEXT REFERENCES users(id),
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
   // Create indexes
   db.exec(`
     CREATE INDEX IF NOT EXISTS idx_tasks_status ON tasks(status);
@@ -168,6 +183,8 @@ export function initializeDatabase() {
     CREATE INDEX IF NOT EXISTS idx_task_history_created ON task_history(created_at);
     CREATE INDEX IF NOT EXISTS idx_notifications_user ON notifications(user_id, is_read);
     CREATE INDEX IF NOT EXISTS idx_notifications_created ON notifications(created_at);
+    CREATE INDEX IF NOT EXISTS idx_status_time_logs_task ON status_time_logs(task_id);
+    CREATE INDEX IF NOT EXISTS idx_status_time_logs_task_status ON status_time_logs(task_id, to_status);
   `);
 
   console.log('Database initialized successfully');

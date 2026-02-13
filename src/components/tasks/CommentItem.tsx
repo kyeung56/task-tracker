@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useLanguage } from '../../hooks/useLanguage';
 import type { Comment, User } from '../../types';
 import { Avatar, Badge } from '../common';
 
@@ -19,6 +20,7 @@ const CommentItem: React.FC<CommentItemProps> = ({
   onEdit,
   onDelete,
 }) => {
+  const { t } = useLanguage();
   const [isExpanded, setIsExpanded] = useState(false);
   const isLongContent = comment.content.length > 300;
 
@@ -27,10 +29,10 @@ const CommentItem: React.FC<CommentItemProps> = ({
     const now = new Date();
     const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
 
-    if (diffInSeconds < 60) return 'Just now';
-    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
-    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`;
-    if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)}d ago`;
+    if (diffInSeconds < 60) return t('justNow') || 'Just now';
+    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}${t('minutesAgo') || 'm ago'}`;
+    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}${t('hoursAgo') || 'h ago'}`;
+    if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)}${t('daysAgo') || 'd ago'}`;
     return date.toLocaleDateString();
   };
 
@@ -78,7 +80,7 @@ const CommentItem: React.FC<CommentItemProps> = ({
             {formatTimeAgo(comment.createdAt)}
           </span>
           {comment.updatedAt !== comment.createdAt && (
-            <span className="text-xs text-gray-400">(edited)</span>
+            <span className="text-xs text-gray-400">({t('edited') || 'edited'})</span>
           )}
         </div>
 
@@ -91,7 +93,7 @@ const CommentItem: React.FC<CommentItemProps> = ({
                 onClick={() => setIsExpanded(true)}
                 className="ml-1 text-indigo-600 dark:text-indigo-400 hover:underline"
               >
-                Show more
+                {t('showMore') || 'Show more'}
               </button>
             </>
           ) : (
@@ -102,7 +104,7 @@ const CommentItem: React.FC<CommentItemProps> = ({
                   onClick={() => setIsExpanded(false)}
                   className="ml-1 text-indigo-600 dark:text-indigo-400 hover:underline"
                 >
-                  Show less
+                  {t('showLess') || 'Show less'}
                 </button>
               )}
             </>
@@ -147,7 +149,7 @@ const CommentItem: React.FC<CommentItemProps> = ({
               onClick={() => onReply(comment)}
               className="text-xs text-gray-500 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400"
             >
-              Reply
+              {t('reply') || 'Reply'}
             </button>
           )}
           {isOwner && onEdit && (
@@ -155,7 +157,7 @@ const CommentItem: React.FC<CommentItemProps> = ({
               onClick={() => onEdit(comment)}
               className="text-xs text-gray-500 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400"
             >
-              Edit
+              {t('edit') || 'Edit'}
             </button>
           )}
           {(isOwner || onDelete) && onDelete && (
@@ -163,7 +165,7 @@ const CommentItem: React.FC<CommentItemProps> = ({
               onClick={() => onDelete(comment)}
               className="text-xs text-gray-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400"
             >
-              Delete
+              {t('delete') || 'Delete'}
             </button>
           )}
         </div>

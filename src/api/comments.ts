@@ -1,5 +1,5 @@
 import client, { apiCall } from './client';
-import type { Comment, Mention } from '../types';
+import type { Comment, Mention, ApiResponse } from '../types';
 
 export interface CreateCommentDTO {
   content: string;
