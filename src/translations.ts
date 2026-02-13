@@ -13,6 +13,7 @@ export const translations: Record<string, Translations> = {
 
     // Navigation
     tasks: 'Tasks',
+    kanban: 'Kanban',
     calendar: 'Calendar',
     dashboard: 'Dashboard',
 
@@ -153,6 +154,7 @@ export const translations: Record<string, Translations> = {
 
     // Navigation
     tasks: '任務',
+    kanban: '看板',
     calendar: '日曆',
     dashboard: '儀表板',
 
@@ -293,6 +295,7 @@ export const translations: Record<string, Translations> = {
 
     // Navigation
     tasks: '任务',
+    kanban: '看板',
     calendar: '日历',
     dashboard: '仪表板',
 

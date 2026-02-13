@@ -10,6 +10,7 @@ import CategoryManager from './components/CategoryManager';
 import TeamManager from './components/TeamManager';
 import Dashboard from './components/Dashboard';
 import Calendar from './components/Calendar';
+import KanbanBoard from './components/KanbanBoard';
 import { Task, Category, TeamMember, FilterState, TaskStats, Status } from './types';
 
 export default function App() {
@@ -104,6 +105,7 @@ export default function App() {
   const getViewTitle = (): string => {
     switch (activeView) {
       case 'tasks': return t('tasks');
+      case 'kanban': return t('kanban') || '看板';
       case 'calendar': return t('calendar');
       case 'dashboard': return t('dashboard');
       default: return t('tasks');
@@ -131,6 +133,7 @@ export default function App() {
           <h1 className="text-3xl font-bold text-slate-800">{getViewTitle()}</h1>
           <p className="text-slate-500 mt-1">
             {activeView === 'tasks' && `${taskStats.total} ${t('total').toLowerCase()}`}
+            {activeView === 'kanban' && `${taskStats.total} ${t('total').toLowerCase()}`}
             {activeView === 'calendar' && t('calendar')}
             {activeView === 'dashboard' && t('teamPerformance')}
           </p>
@@ -151,6 +154,15 @@ export default function App() {
           />
         ) : activeView === 'dashboard' ? (
           <Dashboard tasks={tasks} teamMembers={teamMembers} />
+        ) : activeView === 'kanban' ? (
+          <KanbanBoard
+            tasks={tasks}
+            categories={categories}
+            teamMembers={teamMembers}
+            onEdit={handleEditTask}
+            onDelete={handleDeleteTask}
+            onStatusChange={handleStatusChange}
+          />
         ) : (
           <>
             <FilterBar
