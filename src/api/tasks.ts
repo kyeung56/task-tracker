@@ -1,5 +1,5 @@
 import client, { apiCall } from './client';
-import type { Task, TaskFilters, PaginatedResponse, TaskHistory, StatusTimeLog, StatusTimeSummary, ApiResponse } from '../types';
+import type { Task, TaskFilters, PaginatedResponse, TaskHistory, StatusTimeLog, StatusTimeSummary, ApiResponse, TaskSchedule, TaskScheduleFormData, TaskScheduleOccurrence } from '../types';
 
 export interface CreateTaskDTO {
   title: string;
@@ -18,6 +18,26 @@ export interface CreateTaskDTO {
 
 export interface UpdateTaskDTO extends Partial<CreateTaskDTO> {
   loggedHours?: number;
+}
+
+export interface ScheduleWithTask {
+  id: string;
+  taskId: string;
+  scheduleId: string;
+  occurrenceDate: string;
+  startTime: string | null;
+  endTime: string | null;
+  status: 'scheduled' | 'completed' | 'cancelled';
+  completedAt: string | null;
+  task: {
+    id: string;
+    title: string;
+    priority: string;
+    status: string;
+    categoryId: string | null;
+    category: { id: string; name: string; color: string } | null;
+    assignee: { name: string; avatarUrl: string | null } | null;
+  };
 }
 
 export const tasksApi = {
@@ -96,6 +116,41 @@ export const tasksApi = {
   async getCalendarTasks(startDate: string, endDate: string): Promise<Task[]> {
     return apiCall(client.get<ApiResponse<Task[]>>('/tasks', {
       params: { startDate, endDate, pageSize: 1000 },
+    }));
+  },
+
+  // Get task schedule
+  async getSchedule(taskId: string): Promise<TaskSchedule | null> {
+    return apiCall(client.get<ApiResponse<TaskSchedule | null>>(`/tasks/${taskId}/schedule`));
+  },
+
+  // Create or update task schedule
+  async saveSchedule(taskId: string, data: TaskScheduleFormData): Promise<TaskSchedule> {
+    return apiCall(client.post<ApiResponse<TaskSchedule>>(`/tasks/${taskId}/schedule`, data));
+  },
+
+  // Delete task schedule
+  async deleteSchedule(taskId: string): Promise<void> {
+    await client.delete(`/tasks/${taskId}/schedule`);
+  },
+
+  // Get task occurrences
+  async getOccurrences(taskId: string, startDate?: string, endDate?: string): Promise<TaskScheduleOccurrence[]> {
+    const params: Record<string, string> = {};
+    if (startDate) params.startDate = startDate;
+    if (endDate) params.endDate = endDate;
+    return apiCall(client.get<ApiResponse<TaskScheduleOccurrence[]>>(`/tasks/${taskId}/occurrences`, { params }));
+  },
+
+  // Update occurrence status
+  async updateOccurrence(taskId: string, occurrenceId: string, status: 'scheduled' | 'completed' | 'cancelled'): Promise<TaskScheduleOccurrence> {
+    return apiCall(client.put<ApiResponse<TaskScheduleOccurrence>>(`/tasks/${taskId}/occurrences/${occurrenceId}`, { status }));
+  },
+
+  // Get all calendar occurrences (with task info)
+  async getCalendarOccurrences(startDate: string, endDate: string): Promise<ScheduleWithTask[]> {
+    return apiCall(client.get<ApiResponse<ScheduleWithTask[]>>('/tasks/calendar/occurrences', {
+      params: { startDate, endDate },
     }));
   },
 };

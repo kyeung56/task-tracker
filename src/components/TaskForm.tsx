@@ -1,7 +1,18 @@
 import { useState, useEffect } from 'react';
 import { generateId } from '../utils/helpers';
 import { useLanguage } from '../hooks/useLanguage';
-import type { TaskFormProps, Task, TaskStatus, Priority, Category, TeamMember } from '../types';
+import type { TaskFormProps, Task, TaskStatus, Priority, Category, TeamMember, ScheduleType, TaskScheduleFormData } from '../types';
+
+interface TimeSlot {
+  startTime: string;
+  endTime: string;
+}
+
+interface WeeklySlot {
+  dayOfWeek: number;
+  startTime: string;
+  endTime: string;
+}
 
 interface FormData {
   title: string;
@@ -13,12 +24,30 @@ interface FormData {
   assigneeId: string;
   estimatedHours: string;
   tags: string;
+  // Schedule fields
+  scheduleType: ScheduleType;
+  dailyTimeSlots: TimeSlot[];
+  weeklySlots: WeeklySlot[];
+  monthlyDay: number;
+  monthlyTime: string;
+  recurrence: 'none' | 'daily' | 'weekly' | 'monthly';
+  recurrenceEnd: string;
 }
 
 interface FormErrors {
   title?: string;
   category?: string;
 }
+
+const DAYS_OF_WEEK = [
+  { value: 0, label: '日', labelEn: 'Sun' },
+  { value: 1, label: '一', labelEn: 'Mon' },
+  { value: 2, label: '二', labelEn: 'Tue' },
+  { value: 3, label: '三', labelEn: 'Wed' },
+  { value: 4, label: '四', labelEn: 'Thu' },
+  { value: 5, label: '五', labelEn: 'Fri' },
+  { value: 6, label: '六', labelEn: 'Sat' },
+];
 
 export default function TaskForm({
   task,
@@ -28,7 +57,7 @@ export default function TaskForm({
   onSave,
   onCancel
 }: TaskFormProps) {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const [formData, setFormData] = useState<FormData>({
     title: '',
     description: '',
@@ -38,7 +67,15 @@ export default function TaskForm({
     dueDate: defaultDueDate || '',
     assigneeId: '',
     estimatedHours: '',
-    tags: ''
+    tags: '',
+    // Schedule defaults
+    scheduleType: 'deadline',
+    dailyTimeSlots: [{ startTime: '09:00', endTime: '17:00' }],
+    weeklySlots: [],
+    monthlyDay: 1,
+    monthlyTime: '09:00',
+    recurrence: 'none',
+    recurrenceEnd: '',
   });
   const [errors, setErrors] = useState<FormErrors>({});
 
@@ -53,7 +90,22 @@ export default function TaskForm({
         dueDate: task.dueDate || '',
         assigneeId: task.assigneeId || '',
         estimatedHours: task.estimatedHours ? task.estimatedHours.toString() : '',
-        tags: Array.isArray(task.tags) ? task.tags.join(', ') : (task.tags || '')
+        tags: Array.isArray(task.tags) ? task.tags.join(', ') : (task.tags || ''),
+        // Schedule from task
+        scheduleType: task.schedule?.scheduleType || 'deadline',
+        dailyTimeSlots: task.schedule?.slots?.map(s => ({
+          startTime: s.startTime || '09:00',
+          endTime: s.endTime || '17:00',
+        })) || [{ startTime: '09:00', endTime: '17:00' }],
+        weeklySlots: task.schedule?.slots?.filter(s => s.dayOfWeek !== null).map(s => ({
+          dayOfWeek: s.dayOfWeek!,
+          startTime: s.startTime || '',
+          endTime: s.endTime || '',
+        })) || [],
+        monthlyDay: (task.schedule as any)?.monthlyDay || 1,
+        monthlyTime: (task.schedule as any)?.monthlyTime || '09:00',
+        recurrence: task.schedule?.recurrence || 'none',
+        recurrenceEnd: task.schedule?.recurrenceEnd || '',
       });
     } else if (defaultDueDate) {
       setFormData(prev => ({ ...prev, dueDate: defaultDueDate }));
@@ -66,6 +118,65 @@ export default function TaskForm({
     if (errors[name as keyof FormErrors]) {
       setErrors(prev => ({ ...prev, [name]: undefined }));
     }
+  };
+
+  const handleScheduleTypeChange = (scheduleType: ScheduleType) => {
+    setFormData(prev => ({
+      ...prev,
+      scheduleType,
+      // Reset slots when changing type
+      dailyTimeSlots: scheduleType === 'daily_hours' ? [{ startTime: '09:00', endTime: '17:00' }] : prev.dailyTimeSlots,
+      weeklySlots: scheduleType === 'weekly_days' ? [] : prev.weeklySlots,
+    }));
+  };
+
+  const addDailyTimeSlot = () => {
+    setFormData(prev => ({
+      ...prev,
+      dailyTimeSlots: [...prev.dailyTimeSlots, { startTime: '09:00', endTime: '17:00' }],
+    }));
+  };
+
+  const removeDailyTimeSlot = (index: number) => {
+    setFormData(prev => ({
+      ...prev,
+      dailyTimeSlots: prev.dailyTimeSlots.filter((_, i) => i !== index),
+    }));
+  };
+
+  const updateDailyTimeSlot = (index: number, field: 'startTime' | 'endTime', value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      dailyTimeSlots: prev.dailyTimeSlots.map((slot, i) =>
+        i === index ? { ...slot, [field]: value } : slot
+      ),
+    }));
+  };
+
+  const toggleWeeklyDay = (dayOfWeek: number) => {
+    setFormData(prev => {
+      const exists = prev.weeklySlots.some(s => s.dayOfWeek === dayOfWeek);
+      if (exists) {
+        return {
+          ...prev,
+          weeklySlots: prev.weeklySlots.filter(s => s.dayOfWeek !== dayOfWeek),
+        };
+      } else {
+        return {
+          ...prev,
+          weeklySlots: [...prev.weeklySlots, { dayOfWeek, startTime: '', endTime: '' }],
+        };
+      }
+    });
+  };
+
+  const updateWeeklySlotTime = (dayOfWeek: number, field: 'startTime' | 'endTime', value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      weeklySlots: prev.weeklySlots.map(slot =>
+        slot.dayOfWeek === dayOfWeek ? { ...slot, [field]: value } : slot
+      ),
+    }));
   };
 
   const validate = (): boolean => {
@@ -93,7 +204,7 @@ export default function TaskForm({
       categoryId: formData.categoryId || null,
       priority: formData.priority,
       status: formData.status,
-      dueDate: formData.dueDate || null,
+      dueDate: formData.scheduleType === 'deadline' ? formData.dueDate || null : null,
       assigneeId: formData.assigneeId || null,
       estimatedHours: parseFloat(formData.estimatedHours) || null,
       tags: tagsArray,
@@ -104,8 +215,25 @@ export default function TaskForm({
       taskData.completedAt = now;
     }
 
+    // Build schedule data if not deadline type
+    const scheduleData: TaskScheduleFormData | undefined = formData.scheduleType !== 'deadline' ? {
+      scheduleType: formData.scheduleType,
+      startDate: formData.dueDate || undefined,
+      endDate: formData.recurrenceEnd || undefined,
+      recurrence: formData.recurrence,
+      recurrenceEnd: formData.recurrenceEnd || undefined,
+      dailyTimeSlots: formData.scheduleType === 'daily_hours' ? formData.dailyTimeSlots : undefined,
+      weeklySlots: formData.scheduleType === 'weekly_days' ? formData.weeklySlots.map(s => ({
+        dayOfWeek: s.dayOfWeek,
+        startTime: s.startTime || undefined,
+        endTime: s.endTime || undefined,
+      })) : undefined,
+      monthlyDay: formData.scheduleType === 'monthly_day' ? formData.monthlyDay : undefined,
+      monthlyTime: formData.scheduleType === 'monthly_day' ? formData.monthlyTime : undefined,
+    } : undefined;
+
     if (task) {
-      onSave({ ...task, ...taskData } as Task);
+      onSave({ ...task, ...taskData, _scheduleData: scheduleData } as Task);
     } else {
       const newTask: Task = {
         id: generateId(),
@@ -114,7 +242,7 @@ export default function TaskForm({
         categoryId: formData.categoryId || null,
         priority: formData.priority,
         status: formData.status,
-        dueDate: formData.dueDate || null,
+        dueDate: formData.scheduleType === 'deadline' ? formData.dueDate || null : null,
         startDate: null,
         estimatedHours: parseFloat(formData.estimatedHours) || null,
         loggedHours: 0,
@@ -126,7 +254,8 @@ export default function TaskForm({
         createdAt: now,
         updatedAt: now,
         completedAt: null,
-      };
+        _scheduleData: scheduleData,
+      } as Task;
       onSave(newTask);
     }
   };
@@ -145,6 +274,10 @@ export default function TaskForm({
     { value: 'cancelled', label: '已取消' },
     { value: 'deferred', label: '已延期' },
   ];
+
+  const getDayLabel = (day: typeof DAYS_OF_WEEK[0]) => {
+    return language === 'en' ? day.labelEn : day.label;
+  };
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
@@ -286,36 +419,319 @@ export default function TaskForm({
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-2">
-                {t('dueDate')}
-              </label>
-              <input
-                type="date"
-                name="dueDate"
-                value={formData.dueDate}
-                onChange={handleChange}
-                className="w-full px-4 py-3 bg-slate-50 border-2 border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-2">
-                {t('estimatedHours')}
-              </label>
-              <input
-                type="number"
-                name="estimatedHours"
-                value={formData.estimatedHours}
-                onChange={handleChange}
-                min="0"
-                step="0.5"
-                placeholder="e.g., 4"
-                className="w-full px-4 py-3 bg-slate-50 border-2 border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
-              />
+          {/* Schedule Type Section */}
+          <div className="border-t border-slate-200 pt-4">
+            <label className="block text-sm font-semibold text-slate-700 mb-3">
+              {language === 'en' ? 'Schedule Type' : '时间安排类型'}
+            </label>
+            <div className="flex gap-2 flex-wrap">
+              <button
+                type="button"
+                onClick={() => handleScheduleTypeChange('deadline')}
+                className={`flex-1 min-w-[70px] px-3 py-2.5 rounded-xl border-2 transition-all text-sm font-medium ${
+                  formData.scheduleType === 'deadline'
+                    ? 'border-indigo-500 bg-indigo-50 text-indigo-700'
+                    : 'border-slate-200 bg-slate-50 text-slate-600 hover:border-slate-300'
+                }`}
+              >
+                <svg className="w-4 h-4 mx-auto mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                {language === 'en' ? 'Deadline' : '截止日期'}
+              </button>
+              <button
+                type="button"
+                onClick={() => handleScheduleTypeChange('daily_hours')}
+                className={`flex-1 min-w-[70px] px-3 py-2.5 rounded-xl border-2 transition-all text-sm font-medium ${
+                  formData.scheduleType === 'daily_hours'
+                    ? 'border-indigo-500 bg-indigo-50 text-indigo-700'
+                    : 'border-slate-200 bg-slate-50 text-slate-600 hover:border-slate-300'
+                }`}
+              >
+                <svg className="w-4 h-4 mx-auto mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                {language === 'en' ? 'Daily' : '每日时段'}
+              </button>
+              <button
+                type="button"
+                onClick={() => handleScheduleTypeChange('weekly_days')}
+                className={`flex-1 min-w-[70px] px-3 py-2.5 rounded-xl border-2 transition-all text-sm font-medium ${
+                  formData.scheduleType === 'weekly_days'
+                    ? 'border-indigo-500 bg-indigo-50 text-indigo-700'
+                    : 'border-slate-200 bg-slate-50 text-slate-600 hover:border-slate-300'
+                }`}
+              >
+                <svg className="w-4 h-4 mx-auto mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+                {language === 'en' ? 'Weekly' : '每周天数'}
+              </button>
+              <button
+                type="button"
+                onClick={() => handleScheduleTypeChange('monthly_day')}
+                className={`flex-1 min-w-[70px] px-3 py-2.5 rounded-xl border-2 transition-all text-sm font-medium ${
+                  formData.scheduleType === 'monthly_day'
+                    ? 'border-indigo-500 bg-indigo-50 text-indigo-700'
+                    : 'border-slate-200 bg-slate-50 text-slate-600 hover:border-slate-300'
+                }`}
+              >
+                <svg className="w-4 h-4 mx-auto mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                {language === 'en' ? 'Monthly' : '每月'}
+              </button>
             </div>
           </div>
+
+          {/* Deadline Type */}
+          {formData.scheduleType === 'deadline' && (
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-2">
+                  {t('dueDate')}
+                </label>
+                <input
+                  type="date"
+                  name="dueDate"
+                  value={formData.dueDate}
+                  onChange={handleChange}
+                  className="w-full px-4 py-3 bg-slate-50 border-2 border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-2">
+                  {t('estimatedHours')}
+                </label>
+                <input
+                  type="number"
+                  name="estimatedHours"
+                  value={formData.estimatedHours}
+                  onChange={handleChange}
+                  min="0"
+                  step="0.5"
+                  placeholder="e.g., 4"
+                  className="w-full px-4 py-3 bg-slate-50 border-2 border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Daily Hours Type */}
+          {formData.scheduleType === 'daily_hours' && (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <label className="block text-sm font-semibold text-slate-700">
+                  {language === 'en' ? 'Time Slots' : '时间段'}
+                </label>
+                <button
+                  type="button"
+                  onClick={addDailyTimeSlot}
+                  className="text-sm text-indigo-600 hover:text-indigo-700 font-medium flex items-center gap-1"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                  </svg>
+                  {language === 'en' ? 'Add Slot' : '添加时段'}
+                </button>
+              </div>
+              {formData.dailyTimeSlots.map((slot, index) => (
+                <div key={index} className="flex items-center gap-2">
+                  <input
+                    type="time"
+                    value={slot.startTime}
+                    onChange={(e) => updateDailyTimeSlot(index, 'startTime', e.target.value)}
+                    className="flex-1 px-3 py-2 bg-slate-50 border-2 border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm"
+                  />
+                  <span className="text-slate-400">-</span>
+                  <input
+                    type="time"
+                    value={slot.endTime}
+                    onChange={(e) => updateDailyTimeSlot(index, 'endTime', e.target.value)}
+                    className="flex-1 px-3 py-2 bg-slate-50 border-2 border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm"
+                  />
+                  {formData.dailyTimeSlots.length > 1 && (
+                    <button
+                      type="button"
+                      onClick={() => removeDailyTimeSlot(index)}
+                      className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-all"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                    </button>
+                  )}
+                </div>
+              ))}
+              <div className="grid grid-cols-2 gap-4 pt-2">
+                <div>
+                  <label className="block text-sm font-medium text-slate-600 mb-1">
+                    {language === 'en' ? 'Start Date' : '开始日期'}
+                  </label>
+                  <input
+                    type="date"
+                    name="dueDate"
+                    value={formData.dueDate}
+                    onChange={handleChange}
+                    className="w-full px-3 py-2 bg-slate-50 border-2 border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-600 mb-1">
+                    {language === 'en' ? 'End Date' : '结束日期'}
+                  </label>
+                  <input
+                    type="date"
+                    value={formData.recurrenceEnd}
+                    onChange={(e) => setFormData(prev => ({ ...prev, recurrenceEnd: e.target.value }))}
+                    className="w-full px-3 py-2 bg-slate-50 border-2 border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm"
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Weekly Days Type */}
+          {formData.scheduleType === 'weekly_days' && (
+            <div className="space-y-3">
+              <label className="block text-sm font-semibold text-slate-700">
+                {language === 'en' ? 'Select Days' : '选择星期'}
+              </label>
+              <div className="flex gap-2">
+                {DAYS_OF_WEEK.map(day => {
+                  const isSelected = formData.weeklySlots.some(s => s.dayOfWeek === day.value);
+                  return (
+                    <button
+                      key={day.value}
+                      type="button"
+                      onClick={() => toggleWeeklyDay(day.value)}
+                      className={`w-10 h-10 rounded-xl border-2 transition-all text-sm font-medium ${
+                        isSelected
+                          ? 'border-indigo-500 bg-indigo-500 text-white'
+                          : 'border-slate-200 bg-slate-50 text-slate-600 hover:border-slate-300'
+                      }`}
+                    >
+                      {getDayLabel(day)}
+                    </button>
+                  );
+                })}
+              </div>
+              {formData.weeklySlots.length > 0 && (
+                <div className="space-y-2 pt-2">
+                  <label className="block text-sm font-medium text-slate-600">
+                    {language === 'en' ? 'Time for Each Day (Optional)' : '每天时间（可选）'}
+                  </label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {formData.weeklySlots.sort((a, b) => a.dayOfWeek - b.dayOfWeek).map(slot => (
+                      <div key={slot.dayOfWeek} className="flex items-center gap-2 bg-slate-50 p-2 rounded-lg">
+                        <span className="text-xs font-medium text-slate-500 w-6">
+                          {getDayLabel(DAYS_OF_WEEK.find(d => d.value === slot.dayOfWeek)!)}
+                        </span>
+                        <input
+                          type="time"
+                          value={slot.startTime}
+                          onChange={(e) => updateWeeklySlotTime(slot.dayOfWeek, 'startTime', e.target.value)}
+                          className="flex-1 px-2 py-1 border border-slate-200 rounded-lg text-xs"
+                          placeholder={language === 'en' ? 'Start' : '开始'}
+                        />
+                        <span className="text-slate-300">-</span>
+                        <input
+                          type="time"
+                          value={slot.endTime}
+                          onChange={(e) => updateWeeklySlotTime(slot.dayOfWeek, 'endTime', e.target.value)}
+                          className="flex-1 px-2 py-1 border border-slate-200 rounded-lg text-xs"
+                          placeholder={language === 'en' ? 'End' : '结束'}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              <div className="grid grid-cols-2 gap-4 pt-2">
+                <div>
+                  <label className="block text-sm font-medium text-slate-600 mb-1">
+                    {language === 'en' ? 'Start Date' : '开始日期'}
+                  </label>
+                  <input
+                    type="date"
+                    name="dueDate"
+                    value={formData.dueDate}
+                    onChange={handleChange}
+                    className="w-full px-3 py-2 bg-slate-50 border-2 border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-600 mb-1">
+                    {language === 'en' ? 'End Date' : '结束日期'}
+                  </label>
+                  <input
+                    type="date"
+                    value={formData.recurrenceEnd}
+                    onChange={(e) => setFormData(prev => ({ ...prev, recurrenceEnd: e.target.value }))}
+                    className="w-full px-3 py-2 bg-slate-50 border-2 border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm"
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Monthly Day Type */}
+          {formData.scheduleType === 'monthly_day' && (
+            <div className="space-y-3">
+              <label className="block text-sm font-semibold text-slate-700">
+                {language === 'en' ? 'Select Day of Month' : '选择每月日期'}
+              </label>
+              <div className="flex items-center gap-3">
+                <span className="text-sm text-slate-600">{language === 'en' ? 'Every month on day' : '每月第'}</span>
+                <select
+                  value={formData.monthlyDay}
+                  onChange={(e) => setFormData(prev => ({ ...prev, monthlyDay: parseInt(e.target.value) }))}
+                  className="px-4 py-2 bg-slate-50 border-2 border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm font-medium"
+                >
+                  {Array.from({ length: 31 }, (_, i) => i + 1).map(day => (
+                    <option key={day} value={day}>{day}</option>
+                  ))}
+                </select>
+                <span className="text-sm text-slate-600">{language === 'en' ? '' : '日'}</span>
+              </div>
+              <div className="flex items-center gap-3 pt-2">
+                <label className="text-sm font-medium text-slate-600">
+                  {language === 'en' ? 'Time (Optional)' : '时间（可选）'}
+                </label>
+                <input
+                  type="time"
+                  value={formData.monthlyTime}
+                  onChange={(e) => setFormData(prev => ({ ...prev, monthlyTime: e.target.value }))}
+                  className="px-3 py-2 bg-slate-50 border-2 border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4 pt-2">
+                <div>
+                  <label className="block text-sm font-medium text-slate-600 mb-1">
+                    {language === 'en' ? 'Start Date' : '开始日期'}
+                  </label>
+                  <input
+                    type="date"
+                    name="dueDate"
+                    value={formData.dueDate}
+                    onChange={handleChange}
+                    className="w-full px-3 py-2 bg-slate-50 border-2 border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-600 mb-1">
+                    {language === 'en' ? 'End Date' : '结束日期'}
+                  </label>
+                  <input
+                    type="date"
+                    value={formData.recurrenceEnd}
+                    onChange={(e) => setFormData(prev => ({ ...prev, recurrenceEnd: e.target.value }))}
+                    className="w-full px-3 py-2 bg-slate-50 border-2 border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm"
+                  />
+                </div>
+              </div>
+            </div>
+          )}
 
           <div>
             <label className="block text-sm font-semibold text-slate-700 mb-2">

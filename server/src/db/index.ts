@@ -170,6 +170,133 @@ export function initializeDatabase() {
     )
   `);
 
+  // User notification preferences table
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS user_notification_preferences (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL UNIQUE REFERENCES users(id) ON DELETE CASCADE,
+      task_assigned_in_app INTEGER DEFAULT 1,
+      task_assigned_email INTEGER DEFAULT 0,
+      mentioned_in_app INTEGER DEFAULT 1,
+      mentioned_email INTEGER DEFAULT 0,
+      status_changed_in_app INTEGER DEFAULT 1,
+      status_changed_email INTEGER DEFAULT 0,
+      due_soon_in_app INTEGER DEFAULT 1,
+      due_soon_email INTEGER DEFAULT 1,
+      overdue_in_app INTEGER DEFAULT 1,
+      overdue_email INTEGER DEFAULT 1,
+      due_soon_days INTEGER DEFAULT 1,
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+      updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
+  // Email configuration table (admin settings)
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS email_config (
+      id TEXT PRIMARY KEY,
+      smtp_host TEXT NOT NULL,
+      smtp_port INTEGER DEFAULT 587,
+      smtp_secure INTEGER DEFAULT 0,
+      smtp_user TEXT NOT NULL,
+      smtp_password TEXT NOT NULL,
+      from_email TEXT NOT NULL,
+      from_name TEXT DEFAULT 'Task Tracker',
+      is_enabled INTEGER DEFAULT 0,
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+      updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
+  // Email queue table
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS email_queue (
+      id TEXT PRIMARY KEY,
+      to_email TEXT NOT NULL,
+      to_name TEXT,
+      subject TEXT NOT NULL,
+      html_body TEXT NOT NULL,
+      text_body TEXT,
+      status TEXT DEFAULT 'pending',
+      attempts INTEGER DEFAULT 0,
+      last_error TEXT,
+      notification_id TEXT REFERENCES notifications(id),
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+      sent_at TEXT
+    )
+  `);
+
+  // Email logs table
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS email_logs (
+      id TEXT PRIMARY KEY,
+      to_email TEXT NOT NULL,
+      to_name TEXT,
+      subject TEXT NOT NULL,
+      status TEXT NOT NULL,
+      error_message TEXT,
+      notification_id TEXT REFERENCES notifications(id),
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
+  // Due date reminders table (to prevent duplicates)
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS due_date_reminders (
+      id TEXT PRIMARY KEY,
+      task_id TEXT NOT NULL REFERENCES tasks(id) ON DELETE CASCADE,
+      user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      reminder_type TEXT NOT NULL,
+      reminder_date TEXT NOT NULL,
+      sent_at TEXT DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE(task_id, user_id, reminder_type, reminder_date)
+    )
+  `);
+
+  // Task schedules table - supports daily hours, weekly days, and deadline modes
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS task_schedules (
+      id TEXT PRIMARY KEY,
+      task_id TEXT NOT NULL REFERENCES tasks(id) ON DELETE CASCADE,
+      schedule_type TEXT NOT NULL DEFAULT 'deadline',
+      start_date TEXT,
+      end_date TEXT,
+      recurrence TEXT DEFAULT 'none',
+      recurrence_end TEXT,
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+      updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
+  // Task schedule time slots - for daily hours and weekly days
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS task_schedule_slots (
+      id TEXT PRIMARY KEY,
+      schedule_id TEXT NOT NULL REFERENCES task_schedules(id) ON DELETE CASCADE,
+      day_of_week INTEGER,
+      start_time TEXT,
+      end_time TEXT,
+      sort_order INTEGER DEFAULT 0,
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
+  // Task schedule occurrences - generated instances for recurring tasks
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS task_schedule_occurrences (
+      id TEXT PRIMARY KEY,
+      task_id TEXT NOT NULL REFERENCES tasks(id) ON DELETE CASCADE,
+      schedule_id TEXT NOT NULL REFERENCES task_schedules(id) ON DELETE CASCADE,
+      occurrence_date TEXT NOT NULL,
+      start_time TEXT,
+      end_time TEXT,
+      status TEXT DEFAULT 'scheduled',
+      completed_at TEXT,
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE(task_id, occurrence_date, start_time)
+    )
+  `);
+
   // Create indexes
   db.exec(`
     CREATE INDEX IF NOT EXISTS idx_tasks_status ON tasks(status);
@@ -185,6 +312,16 @@ export function initializeDatabase() {
     CREATE INDEX IF NOT EXISTS idx_notifications_created ON notifications(created_at);
     CREATE INDEX IF NOT EXISTS idx_status_time_logs_task ON status_time_logs(task_id);
     CREATE INDEX IF NOT EXISTS idx_status_time_logs_task_status ON status_time_logs(task_id, to_status);
+    CREATE INDEX IF NOT EXISTS idx_email_queue_status ON email_queue(status);
+    CREATE INDEX IF NOT EXISTS idx_email_queue_created ON email_queue(created_at);
+    CREATE INDEX IF NOT EXISTS idx_due_date_reminders_task ON due_date_reminders(task_id);
+    CREATE INDEX IF NOT EXISTS idx_due_date_reminders_user ON due_date_reminders(user_id);
+    CREATE INDEX IF NOT EXISTS idx_task_schedules_task ON task_schedules(task_id);
+    CREATE INDEX IF NOT EXISTS idx_task_schedules_type ON task_schedules(schedule_type);
+    CREATE INDEX IF NOT EXISTS idx_task_schedule_slots_schedule ON task_schedule_slots(schedule_id);
+    CREATE INDEX IF NOT EXISTS idx_task_schedule_occurrences_task ON task_schedule_occurrences(task_id);
+    CREATE INDEX IF NOT EXISTS idx_task_schedule_occurrences_date ON task_schedule_occurrences(occurrence_date);
+    CREATE INDEX IF NOT EXISTS idx_task_schedule_occurrences_schedule ON task_schedule_occurrences(schedule_id);
   `);
 
   console.log('Database initialized successfully');

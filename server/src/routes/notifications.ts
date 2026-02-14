@@ -1,6 +1,16 @@
 import { Router } from 'express';
+import { v4 as uuidv4 } from 'uuid';
 import db from '../db/index.js';
 import { authMiddleware, AuthRequest } from '../middleware/auth.js';
+import {
+  getUserPreferences,
+  updateUserPreferences,
+} from '../services/notificationService.js';
+import {
+  getEmailConfig,
+  updateEmailConfig,
+  testEmailConfig,
+} from '../services/emailService.js';
 
 const router = Router();
 
@@ -169,6 +179,227 @@ router.delete('/:id', authMiddleware, (req: AuthRequest, res) => {
       error: {
         code: 'DELETE_NOTIFICATION_ERROR',
         message: 'Failed to delete notification',
+      },
+    });
+  }
+});
+
+// ============================================
+// Notification Preferences Endpoints
+// ============================================
+
+// Get user notification preferences
+router.get('/preferences', authMiddleware, (req: AuthRequest, res) => {
+  try {
+    const preferences = getUserPreferences(req.user!.id);
+
+    res.json({
+      success: true,
+      data: preferences,
+    });
+  } catch (error) {
+    console.error('Get preferences error:', error);
+    res.status(500).json({
+      success: false,
+      error: {
+        code: 'GET_PREFERENCES_ERROR',
+        message: 'Failed to get notification preferences',
+      },
+    });
+  }
+});
+
+// Update user notification preferences
+router.put('/preferences', authMiddleware, (req: AuthRequest, res) => {
+  try {
+    updateUserPreferences(req.user!.id, req.body);
+
+    const preferences = getUserPreferences(req.user!.id);
+
+    res.json({
+      success: true,
+      data: preferences,
+    });
+  } catch (error) {
+    console.error('Update preferences error:', error);
+    res.status(500).json({
+      success: false,
+      error: {
+        code: 'UPDATE_PREFERENCES_ERROR',
+        message: 'Failed to update notification preferences',
+      },
+    });
+  }
+});
+
+// ============================================
+// Email Configuration Endpoints (Admin Only)
+// ============================================
+
+// Get email configuration
+router.get('/email-config', authMiddleware, (req: AuthRequest, res) => {
+  try {
+    // Check admin permission (use canManageUsers as fallback for backwards compatibility)
+    if (!req.user?.permissions?.canManageSettings && !req.user?.permissions?.canManageUsers) {
+      return res.status(403).json({
+        success: false,
+        error: {
+          code: 'FORBIDDEN',
+          message: 'Admin access required',
+        },
+      });
+    }
+
+    const config = getEmailConfig();
+
+    // Don't expose password in response
+    const safeConfig = config ? {
+      smtpHost: config.smtpHost,
+      smtpPort: config.smtpPort,
+      smtpSecure: config.smtpSecure,
+      smtpUser: config.smtpUser,
+      smtpPasswordSet: !!config.smtpPassword,
+      fromEmail: config.fromEmail,
+      fromName: config.fromName,
+      isEnabled: config.isEnabled,
+    } : null;
+
+    res.json({
+      success: true,
+      data: safeConfig,
+    });
+  } catch (error) {
+    console.error('Get email config error:', error);
+    res.status(500).json({
+      success: false,
+      error: {
+        code: 'GET_EMAIL_CONFIG_ERROR',
+        message: 'Failed to get email configuration',
+      },
+    });
+  }
+});
+
+// Update email configuration
+router.put('/email-config', authMiddleware, (req: AuthRequest, res) => {
+  try {
+    // Check admin permission (use canManageUsers as fallback for backwards compatibility)
+    if (!req.user?.permissions?.canManageSettings && !req.user?.permissions?.canManageUsers) {
+      return res.status(403).json({
+        success: false,
+        error: {
+          code: 'FORBIDDEN',
+          message: 'Admin access required',
+        },
+      });
+    }
+
+    const {
+      smtpHost,
+      smtpPort,
+      smtpSecure,
+      smtpUser,
+      smtpPassword,
+      fromEmail,
+      fromName,
+      isEnabled,
+    } = req.body;
+
+    // Only update password if provided
+    const configUpdate: any = {
+      smtpHost,
+      smtpPort,
+      smtpSecure,
+      smtpUser,
+      fromEmail,
+      fromName,
+      isEnabled,
+    };
+
+    if (smtpPassword) {
+      configUpdate.smtpPassword = smtpPassword;
+    }
+
+    updateEmailConfig(configUpdate);
+
+    const config = getEmailConfig();
+
+    const safeConfig = config ? {
+      smtpHost: config.smtpHost,
+      smtpPort: config.smtpPort,
+      smtpSecure: config.smtpSecure,
+      smtpUser: config.smtpUser,
+      smtpPasswordSet: !!config.smtpPassword,
+      fromEmail: config.fromEmail,
+      fromName: config.fromName,
+      isEnabled: config.isEnabled,
+    } : null;
+
+    res.json({
+      success: true,
+      data: safeConfig,
+    });
+  } catch (error) {
+    console.error('Update email config error:', error);
+    res.status(500).json({
+      success: false,
+      error: {
+        code: 'UPDATE_EMAIL_CONFIG_ERROR',
+        message: 'Failed to update email configuration',
+      },
+    });
+  }
+});
+
+// Test email configuration
+router.post('/email-config/test', authMiddleware, async (req: AuthRequest, res) => {
+  try {
+    // Check admin permission (use canManageUsers as fallback for backwards compatibility)
+    if (!req.user?.permissions?.canManageSettings && !req.user?.permissions?.canManageUsers) {
+      return res.status(403).json({
+        success: false,
+        error: {
+          code: 'FORBIDDEN',
+          message: 'Admin access required',
+        },
+      });
+    }
+
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({
+        success: false,
+        error: {
+          code: 'VALIDATION_ERROR',
+          message: 'Email address is required',
+        },
+      });
+    }
+
+    const result = await testEmailConfig(email);
+
+    if (result.success) {
+      res.json({
+        success: true,
+        data: { message: 'Test email sent successfully' },
+      });
+    } else {
+      res.status(400).json({
+        success: false,
+        error: {
+          code: 'EMAIL_TEST_FAILED',
+          message: result.error || 'Failed to send test email',
+        },
+      });
+    }
+  } catch (error) {
+    console.error('Test email config error:', error);
+    res.status(500).json({
+      success: false,
+      error: {
+        code: 'TEST_EMAIL_CONFIG_ERROR',
+        message: 'Failed to test email configuration',
       },
     });
   }

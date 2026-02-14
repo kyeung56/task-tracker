@@ -232,3 +232,68 @@ export function exportToJSON(tasks: Task[], categories: Category[], teamMembers:
   a.click();
   URL.revokeObjectURL(url);
 }
+
+/**
+ * Format hours into human-readable string
+ * Examples:
+ * - 0.001944444 -> ""
+ * - 0.5 -> "30m"
+ * - 1 -> "1h"
+ * - 1.5 -> "1h 30m"
+ * - 2.25 -> "2h 15m"
+ */
+export function formatHours(hours: number | null | undefined, language: string = 'en'): string {
+  if (hours === null || hours === undefined || hours === 0) return '';
+
+  // Round to avoid floating point errors (2 decimal places precision)
+  const roundedHours = Math.round(hours * 100) / 100;
+
+  if (roundedHours < 0.01) return ''; // Less than ~30 seconds, don't show
+
+  const totalMinutes = Math.round(roundedHours * 60);
+  const h = Math.floor(totalMinutes / 60);
+  const m = totalMinutes % 60;
+
+  if (h === 0 && m === 0) return '';
+
+  if (h === 0) {
+    return `${m}m`;
+  }
+
+  if (m === 0) {
+    return `${h}h`;
+  }
+
+  return `${h}h ${m}m`;
+}
+
+/**
+ * Format hours as decimal with 1-2 decimal places
+ * Examples:
+ * - 0.001944444 -> "0"
+ * - 0.5 -> "0.5"
+ * - 1 -> "1"
+ * - 1.5 -> "1.5"
+ * - 2.25 -> "2.25"
+ * - 2.256 -> "2.26"
+ */
+export function formatHoursDecimal(hours: number | null | undefined): string {
+  if (hours === null || hours === undefined) return '0';
+
+  // Round to 2 decimal places
+  const rounded = Math.round(hours * 100) / 100;
+
+  if (rounded === 0) return '0';
+
+  // Format with up to 2 decimal places, removing trailing zeros
+  return parseFloat(rounded.toFixed(2)).toString();
+}
+
+/**
+ * Format a number avoiding floating point errors
+ */
+export function formatNumber(value: number | null | undefined, decimals: number = 2): string {
+  if (value === null || value === undefined) return '0';
+  const rounded = Math.round(value * Math.pow(10, decimals)) / Math.pow(10, decimals);
+  return parseFloat(rounded.toFixed(decimals)).toString();
+}

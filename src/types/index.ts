@@ -82,6 +82,10 @@ export interface Task {
   attachments?: Attachment[];
   history?: TaskHistory[];
   subTasks?: Task[];
+  schedule?: TaskSchedule;
+  occurrences?: TaskScheduleOccurrence[];
+  // Internal field for form submission (not stored)
+  _scheduleData?: TaskScheduleFormData;
 }
 
 // ============================================
@@ -208,6 +212,50 @@ export interface Notification {
   metadata: Record<string, unknown>;
   createdAt: string;
   readAt: string | null;
+}
+
+// ============================================
+// Notification Preferences Types
+// ============================================
+
+export interface NotificationPreferences {
+  taskAssignedInApp: boolean;
+  taskAssignedEmail: boolean;
+  mentionedInApp: boolean;
+  mentionedEmail: boolean;
+  statusChangedInApp: boolean;
+  statusChangedEmail: boolean;
+  dueSoonInApp: boolean;
+  dueSoonEmail: boolean;
+  overdueInApp: boolean;
+  overdueEmail: boolean;
+  dueSoonDays: number;
+}
+
+// ============================================
+// Email Configuration Types
+// ============================================
+
+export interface EmailConfig {
+  smtpHost: string;
+  smtpPort: number;
+  smtpSecure: boolean;
+  smtpUser: string;
+  smtpPasswordSet: boolean;
+  fromEmail: string;
+  fromName: string;
+  isEnabled: boolean;
+}
+
+export interface EmailConfigUpdate {
+  smtpHost?: string;
+  smtpPort?: number;
+  smtpSecure?: boolean;
+  smtpUser?: string;
+  smtpPassword?: string;
+  fromEmail?: string;
+  fromName?: string;
+  isEnabled?: boolean;
 }
 
 // ============================================
@@ -361,6 +409,71 @@ export interface TeamWorkload {
   overdueTasks: number;
   totalEstimatedHours: number;
   totalLoggedHours: number;
+}
+
+// ============================================
+// Task Schedule Types
+// ============================================
+
+export type ScheduleType = 'daily_hours' | 'weekly_days' | 'monthly_day' | 'deadline';
+export type RecurrenceType = 'none' | 'daily' | 'weekly' | 'monthly';
+
+export interface TaskScheduleSlot {
+  id: string;
+  scheduleId: string;
+  dayOfWeek: number | null; // 0-6 (Sunday-Saturday), null for daily hours
+  startTime: string | null; // HH:mm format
+  endTime: string | null; // HH:mm format
+  sortOrder: number;
+  createdAt: string;
+}
+
+export interface TaskSchedule {
+  id: string;
+  taskId: string;
+  scheduleType: ScheduleType;
+  startDate: string | null;
+  endDate: string | null;
+  recurrence: RecurrenceType;
+  recurrenceEnd: string | null;
+  slots: TaskScheduleSlot[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface TaskScheduleOccurrence {
+  id: string;
+  taskId: string;
+  scheduleId: string;
+  occurrenceDate: string; // YYYY-MM-DD
+  startTime: string | null; // HH:mm
+  endTime: string | null; // HH:mm
+  status: 'scheduled' | 'completed' | 'cancelled';
+  completedAt: string | null;
+  createdAt: string;
+}
+
+// Form data for creating/updating task schedule
+export interface TaskScheduleFormData {
+  scheduleType: ScheduleType;
+  startDate?: string;
+  endDate?: string;
+  recurrence: RecurrenceType;
+  recurrenceEnd?: string;
+  // For daily_hours: time slots within a day
+  dailyTimeSlots?: Array<{
+    startTime: string;
+    endTime: string;
+  }>;
+  // For weekly_days: which days and optional times
+  weeklySlots?: Array<{
+    dayOfWeek: number; // 0-6
+    startTime?: string;
+    endTime?: string;
+  }>;
+  // For monthly_day: which day of month (1-31)
+  monthlyDay?: number;
+  monthlyTime?: string;
 }
 
 // ============================================

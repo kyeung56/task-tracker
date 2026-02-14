@@ -3,6 +3,7 @@ import { v4 as uuidv4 } from 'uuid';
 import db from '../db/index.js';
 import { authMiddleware, AuthRequest } from '../middleware/auth.js';
 import { sendNotificationToUser } from '../index.js';
+import { notifyTaskAssignment, processMentions } from '../services/notificationService.js';
 
 const router = Router();
 
@@ -307,7 +308,7 @@ router.get('/:id', authMiddleware, (req: AuthRequest, res) => {
 });
 
 // Create task
-router.post('/', authMiddleware, (req: AuthRequest, res) => {
+router.post('/', authMiddleware, async (req: AuthRequest, res) => {
   try {
     const {
       title,
@@ -371,20 +372,14 @@ router.post('/', authMiddleware, (req: AuthRequest, res) => {
       VALUES (?, ?, NULL, ?, ?, ?)
     `).run(uuidv4(), taskId, status, new Date().toISOString(), req.user!.id);
 
-    // Send notification to assignee
+    // Send notification to assignee using notification service
     if (assigneeId && assigneeId !== req.user!.id) {
-      sendNotificationToUser(assigneeId, {
-        type: 'task_assigned',
-        title: `新任务分配: ${title}`,
-        taskId,
-        actorId: req.user!.id,
-      });
+      await notifyTaskAssignment(taskId, title, assigneeId, req.user!.id);
+    }
 
-      // Create notification record
-      db.prepare(`
-        INSERT INTO notifications (id, user_id, type, title, task_id, actor_id)
-        VALUES (?, ?, 'task_assigned', ?, ?, ?)
-      `).run(uuidv4(), assigneeId, `新任务分配: ${title}`, taskId, req.user!.id);
+    // Process @mentions in description
+    if (description) {
+      await processMentions(description, taskId, title, req.user!.id);
     }
 
     // Get created task
@@ -439,7 +434,7 @@ router.post('/', authMiddleware, (req: AuthRequest, res) => {
 });
 
 // Update task
-router.put('/:id', authMiddleware, (req: AuthRequest, res) => {
+router.put('/:id', authMiddleware, async (req: AuthRequest, res) => {
   try {
     const { id } = req.params;
     const updates = req.body;
@@ -537,6 +532,17 @@ router.put('/:id', authMiddleware, (req: AuthRequest, res) => {
           taskId: id,
           actorId: req.user!.id,
         });
+      }
+
+      // Send notification for assignee change (notify NEW assignee)
+      const assigneeRecord = historyRecords.find(r => r.fieldName === 'assignee');
+      if (assigneeRecord && assigneeRecord.newValue && assigneeRecord.newValue !== req.user!.id) {
+        await notifyTaskAssignment(id, currentTask.title, assigneeRecord.newValue, req.user!.id);
+      }
+
+      // Process @mentions in description update
+      if ('description' in updates && updates.description) {
+        await processMentions(updates.description as string, id, currentTask.title, req.user!.id);
       }
     }
 
@@ -908,4 +914,468 @@ router.get('/:id/status-summary', authMiddleware, (req: AuthRequest, res) => {
     });
   }
 });
+
+// ============================================
+// Task Schedule Routes
+// ============================================
+
+// Helper function to generate occurrences for a schedule
+function generateOccurrences(
+  scheduleId: string,
+  taskId: string,
+  scheduleType: string,
+  startDate: string | null,
+  endDate: string | null,
+  recurrence: string,
+  recurrenceEnd: string | null,
+  slots: any[]
+) {
+  const occurrences: any[] = [];
+  const now = new Date();
+  const maxOccurrences = 365; // Limit to prevent infinite loops
+  let count = 0;
+
+  if (scheduleType === 'deadline') {
+    // For deadline type, just create one occurrence on the due date
+    if (startDate) {
+      const occurrenceId = uuidv4();
+      db.prepare(`
+        INSERT INTO task_schedule_occurrences (id, task_id, schedule_id, occurrence_date, status)
+        VALUES (?, ?, ?, ?, 'scheduled')
+      `).run(occurrenceId, taskId, scheduleId, startDate);
+    }
+    return;
+  }
+
+  if (scheduleType === 'daily_hours' && slots.length > 0) {
+    // Generate occurrences for daily time slots
+    let currentDate = startDate ? new Date(startDate) : new Date();
+    const endLimit = recurrenceEnd ? new Date(recurrenceEnd) :
+                     endDate ? new Date(endDate) :
+                     new Date(now.getTime() + 90 * 24 * 60 * 60 * 1000); // 90 days default
+
+    while (currentDate <= endLimit && count < maxOccurrences) {
+      const dateStr = currentDate.toISOString().split('T')[0];
+
+      for (const slot of slots) {
+        const occurrenceId = uuidv4();
+        db.prepare(`
+          INSERT INTO task_schedule_occurrences (id, task_id, schedule_id, occurrence_date, start_time, end_time, status)
+          VALUES (?, ?, ?, ?, ?, ?, 'scheduled')
+        `).run(occurrenceId, taskId, scheduleId, dateStr, slot.startTime, slot.endTime);
+      }
+
+      if (recurrence === 'none') break;
+      currentDate.setDate(currentDate.getDate() + 1);
+      count++;
+    }
+  }
+
+  if (scheduleType === 'weekly_days' && slots.length > 0) {
+    // Generate occurrences for specific days of the week
+    let currentDate = startDate ? new Date(startDate) : new Date();
+    const endLimit = recurrenceEnd ? new Date(recurrenceEnd) :
+                     endDate ? new Date(endDate) :
+                     new Date(now.getTime() + 90 * 24 * 60 * 60 * 1000);
+
+    const daysToSchedule = slots.map(s => s.dayOfWeek);
+
+    while (currentDate <= endLimit && count < maxOccurrences) {
+      const dayOfWeek = currentDate.getDay();
+
+      if (daysToSchedule.includes(dayOfWeek)) {
+        const dateStr = currentDate.toISOString().split('T')[0];
+        const slot = slots.find(s => s.dayOfWeek === dayOfWeek);
+
+        const occurrenceId = uuidv4();
+        db.prepare(`
+          INSERT INTO task_schedule_occurrences (id, task_id, schedule_id, occurrence_date, start_time, end_time, status)
+          VALUES (?, ?, ?, ?, ?, ?, 'scheduled')
+        `).run(occurrenceId, taskId, scheduleId, dateStr, slot?.startTime || null, slot?.endTime || null);
+      }
+
+      currentDate.setDate(currentDate.getDate() + 1);
+      count++;
+    }
+  }
+}
+
+// Get task schedule
+router.get('/:id/schedule', authMiddleware, (req: AuthRequest, res) => {
+  try {
+    const { id } = req.params;
+
+    const schedule = db.prepare(`
+      SELECT * FROM task_schedules WHERE task_id = ?
+    `).get(id) as any;
+
+    if (!schedule) {
+      return res.json({
+        success: true,
+        data: null,
+      });
+    }
+
+    // Get slots
+    const slots = db.prepare(`
+      SELECT * FROM task_schedule_slots WHERE schedule_id = ? ORDER BY sort_order
+    `).all(schedule.id) as any[];
+
+    res.json({
+      success: true,
+      data: {
+        id: schedule.id,
+        taskId: schedule.task_id,
+        scheduleType: schedule.schedule_type,
+        startDate: schedule.start_date,
+        endDate: schedule.end_date,
+        recurrence: schedule.recurrence,
+        recurrenceEnd: schedule.recurrence_end,
+        slots: slots.map(s => ({
+          id: s.id,
+          scheduleId: s.schedule_id,
+          dayOfWeek: s.day_of_week,
+          startTime: s.start_time,
+          endTime: s.end_time,
+          sortOrder: s.sort_order,
+          createdAt: s.created_at,
+        })),
+        createdAt: schedule.created_at,
+        updatedAt: schedule.updated_at,
+      },
+    });
+  } catch (error) {
+    console.error('Get task schedule error:', error);
+    res.status(500).json({
+      success: false,
+      error: {
+        code: 'GET_SCHEDULE_ERROR',
+        message: 'Failed to get task schedule',
+      },
+    });
+  }
+});
+
+// Create or update task schedule
+router.post('/:id/schedule', authMiddleware, (req: AuthRequest, res) => {
+  try {
+    const { id: taskId } = req.params;
+    const {
+      scheduleType,
+      startDate,
+      endDate,
+      recurrence = 'none',
+      recurrenceEnd,
+      dailyTimeSlots = [],
+      weeklySlots = [],
+    } = req.body;
+
+    // Verify task exists
+    const task = db.prepare('SELECT id FROM tasks WHERE id = ? AND deleted_at IS NULL').get(taskId);
+    if (!task) {
+      return res.status(404).json({
+        success: false,
+        error: {
+          code: 'TASK_NOT_FOUND',
+          message: 'Task not found',
+        },
+      });
+    }
+
+    // Check if schedule already exists
+    const existingSchedule = db.prepare('SELECT id FROM task_schedules WHERE task_id = ?').get(taskId) as any;
+
+    const scheduleId = existingSchedule?.id || uuidv4();
+
+    if (existingSchedule) {
+      // Update existing schedule
+      db.prepare(`
+        UPDATE task_schedules
+        SET schedule_type = ?, start_date = ?, end_date = ?, recurrence = ?, recurrence_end = ?, updated_at = CURRENT_TIMESTAMP
+        WHERE id = ?
+      `).run(scheduleType, startDate || null, endDate || null, recurrence, recurrenceEnd || null, scheduleId);
+
+      // Delete old slots and occurrences
+      db.prepare('DELETE FROM task_schedule_slots WHERE schedule_id = ?').run(scheduleId);
+      db.prepare('DELETE FROM task_schedule_occurrences WHERE schedule_id = ?').run(scheduleId);
+    } else {
+      // Create new schedule
+      db.prepare(`
+        INSERT INTO task_schedules (id, task_id, schedule_type, start_date, end_date, recurrence, recurrence_end)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+      `).run(scheduleId, taskId, scheduleType, startDate || null, endDate || null, recurrence, recurrenceEnd || null);
+    }
+
+    // Insert slots based on schedule type
+    const slots: any[] = [];
+    let sortOrder = 0;
+
+    if (scheduleType === 'daily_hours' && dailyTimeSlots.length > 0) {
+      for (const slot of dailyTimeSlots) {
+        const slotId = uuidv4();
+        db.prepare(`
+          INSERT INTO task_schedule_slots (id, schedule_id, day_of_week, start_time, end_time, sort_order)
+          VALUES (?, ?, NULL, ?, ?, ?)
+        `).run(slotId, scheduleId, slot.startTime, slot.endTime, sortOrder++);
+        slots.push({ startTime: slot.startTime, endTime: slot.endTime });
+      }
+    } else if (scheduleType === 'weekly_days' && weeklySlots.length > 0) {
+      for (const slot of weeklySlots) {
+        const slotId = uuidv4();
+        db.prepare(`
+          INSERT INTO task_schedule_slots (id, schedule_id, day_of_week, start_time, end_time, sort_order)
+          VALUES (?, ?, ?, ?, ?, ?)
+        `).run(slotId, scheduleId, slot.dayOfWeek, slot.startTime || null, slot.endTime || null, sortOrder++);
+        slots.push({ dayOfWeek: slot.dayOfWeek, startTime: slot.startTime, endTime: slot.endTime });
+      }
+    }
+
+    // Generate occurrences
+    generateOccurrences(
+      scheduleId,
+      taskId,
+      scheduleType,
+      startDate,
+      endDate,
+      recurrence,
+      recurrenceEnd,
+      slots
+    );
+
+    // Update task's due_date for deadline type
+    if (scheduleType === 'deadline' && startDate) {
+      db.prepare('UPDATE tasks SET due_date = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?')
+        .run(startDate, taskId);
+    } else if (scheduleType !== 'deadline') {
+      // For non-deadline types, clear the due_date if it was set
+      // Or set it to the end_date if available
+      if (endDate) {
+        db.prepare('UPDATE tasks SET due_date = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?')
+          .run(endDate, taskId);
+      }
+    }
+
+    res.json({
+      success: true,
+      data: {
+        id: scheduleId,
+        taskId,
+        scheduleType,
+        startDate,
+        endDate,
+        recurrence,
+        recurrenceEnd,
+        slots,
+      },
+    });
+  } catch (error) {
+    console.error('Create/update task schedule error:', error);
+    res.status(500).json({
+      success: false,
+      error: {
+        code: 'SAVE_SCHEDULE_ERROR',
+        message: 'Failed to save task schedule',
+      },
+    });
+  }
+});
+
+// Delete task schedule
+router.delete('/:id/schedule', authMiddleware, (req: AuthRequest, res) => {
+  try {
+    const { id: taskId } = req.params;
+
+    const schedule = db.prepare('SELECT id FROM task_schedules WHERE task_id = ?').get(taskId) as any;
+    if (!schedule) {
+      return res.status(404).json({
+        success: false,
+        error: {
+          code: 'SCHEDULE_NOT_FOUND',
+          message: 'Schedule not found',
+        },
+      });
+    }
+
+    // Delete occurrences, slots, and schedule (cascading should handle this, but let's be explicit)
+    db.prepare('DELETE FROM task_schedule_occurrences WHERE schedule_id = ?').run(schedule.id);
+    db.prepare('DELETE FROM task_schedule_slots WHERE schedule_id = ?').run(schedule.id);
+    db.prepare('DELETE FROM task_schedules WHERE id = ?').run(schedule.id);
+
+    res.json({
+      success: true,
+      data: { message: 'Schedule deleted successfully' },
+    });
+  } catch (error) {
+    console.error('Delete task schedule error:', error);
+    res.status(500).json({
+      success: false,
+      error: {
+        code: 'DELETE_SCHEDULE_ERROR',
+        message: 'Failed to delete task schedule',
+      },
+    });
+  }
+});
+
+// Get task schedule occurrences
+router.get('/:id/occurrences', authMiddleware, (req: AuthRequest, res) => {
+  try {
+    const { id: taskId } = req.params;
+    const { startDate, endDate } = req.query;
+
+    let query = 'SELECT * FROM task_schedule_occurrences WHERE task_id = ?';
+    const params: any[] = [taskId];
+
+    if (startDate) {
+      query += ' AND occurrence_date >= ?';
+      params.push(startDate);
+    }
+    if (endDate) {
+      query += ' AND occurrence_date <= ?';
+      params.push(endDate);
+    }
+
+    query += ' ORDER BY occurrence_date, start_time';
+
+    const occurrences = db.prepare(query).all(...params) as any[];
+
+    res.json({
+      success: true,
+      data: occurrences.map(o => ({
+        id: o.id,
+        taskId: o.task_id,
+        scheduleId: o.schedule_id,
+        occurrenceDate: o.occurrence_date,
+        startTime: o.start_time,
+        endTime: o.end_time,
+        status: o.status,
+        completedAt: o.completed_at,
+        createdAt: o.created_at,
+      })),
+    });
+  } catch (error) {
+    console.error('Get task occurrences error:', error);
+    res.status(500).json({
+      success: false,
+      error: {
+        code: 'GET_OCCURRENCES_ERROR',
+        message: 'Failed to get task occurrences',
+      },
+    });
+  }
+});
+
+// Update occurrence status
+router.put('/:id/occurrences/:occurrenceId', authMiddleware, (req: AuthRequest, res) => {
+  try {
+    const { occurrenceId } = req.params;
+    const { status } = req.body;
+
+    if (!['scheduled', 'completed', 'cancelled'].includes(status)) {
+      return res.status(400).json({
+        success: false,
+        error: {
+          code: 'VALIDATION_ERROR',
+          message: 'Invalid status',
+        },
+      });
+    }
+
+    const completedAt = status === 'completed' ? new Date().toISOString() : null;
+
+    db.prepare(`
+      UPDATE task_schedule_occurrences
+      SET status = ?, completed_at = ?
+      WHERE id = ?
+    `).run(status, completedAt, occurrenceId);
+
+    res.json({
+      success: true,
+      data: { id: occurrenceId, status, completedAt },
+    });
+  } catch (error) {
+    console.error('Update occurrence error:', error);
+    res.status(500).json({
+      success: false,
+      error: {
+        code: 'UPDATE_OCCURRENCE_ERROR',
+        message: 'Failed to update occurrence',
+      },
+    });
+  }
+});
+
+// Get all scheduled occurrences for calendar (global endpoint)
+router.get('/calendar/occurrences', authMiddleware, (req: AuthRequest, res) => {
+  try {
+    const { startDate, endDate } = req.query;
+
+    if (!startDate || !endDate) {
+      return res.status(400).json({
+        success: false,
+        error: {
+          code: 'VALIDATION_ERROR',
+          message: 'startDate and endDate are required',
+        },
+      });
+    }
+
+    // Get all occurrences with task info
+    const occurrences = db.prepare(`
+      SELECT
+        o.id, o.task_id, o.schedule_id, o.occurrence_date, o.start_time, o.end_time, o.status, o.completed_at,
+        t.title, t.priority, t.status as task_status, t.category_id,
+        c.name as category_name, c.color as category_color,
+        u.name as assignee_name, u.avatar_url as assignee_avatar
+      FROM task_schedule_occurrences o
+      JOIN tasks t ON o.task_id = t.id
+      LEFT JOIN categories c ON t.category_id = c.id
+      LEFT JOIN users u ON t.assignee_id = u.id
+      WHERE t.deleted_at IS NULL
+        AND o.occurrence_date >= ?
+        AND o.occurrence_date <= ?
+      ORDER BY o.occurrence_date, o.start_time
+    `).all(startDate, endDate) as any[];
+
+    res.json({
+      success: true,
+      data: occurrences.map(o => ({
+        id: o.id,
+        taskId: o.task_id,
+        scheduleId: o.schedule_id,
+        occurrenceDate: o.occurrence_date,
+        startTime: o.start_time,
+        endTime: o.end_time,
+        status: o.status,
+        completedAt: o.completed_at,
+        task: {
+          id: o.task_id,
+          title: o.title,
+          priority: o.priority,
+          status: o.task_status,
+          categoryId: o.category_id,
+          category: o.category_name ? {
+            id: o.category_id,
+            name: o.category_name,
+            color: o.category_color,
+          } : null,
+          assignee: o.assignee_name ? {
+            name: o.assignee_name,
+            avatarUrl: o.assignee_avatar,
+          } : null,
+        },
+      })),
+    });
+  } catch (error) {
+    console.error('Get calendar occurrences error:', error);
+    res.status(500).json({
+      success: false,
+      error: {
+        code: 'GET_CALENDAR_OCCURRENCES_ERROR',
+        message: 'Failed to get calendar occurrences',
+      },
+    });
+  }
+});
+
 export default router;

@@ -30,6 +30,7 @@ export async function seedDatabase() {
         canManageUsers: true,
         canManageCategories: true,
         canManageWorkflows: true,
+        canManageSettings: true,
         canViewAllTasks: true,
         canExportData: true,
       }),

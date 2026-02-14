@@ -8,11 +8,15 @@ interface NavItem {
   id: string;
   icon: string;
   label: string;
+  badge?: number;
 }
 
 interface ExtendedSidebarProps extends SidebarProps {
   onToggleWorkflowManager?: () => void;
   teamMembers?: TeamMember[];
+  myTasksCount?: number;
+  createdTasksCount?: number;
+  involvedTasksCount?: number;
 }
 
 export default function Sidebar({
@@ -25,10 +29,20 @@ export default function Sidebar({
   onExportCSV,
   onExportJSON,
   onToggleWorkflowManager,
-  teamMembers = []
+  teamMembers = [],
+  myTasksCount = 0,
+  createdTasksCount = 0,
+  involvedTasksCount = 0,
 }: ExtendedSidebarProps) {
   const { t } = useLanguage();
-  const { permissions, isAdmin } = usePermissions();
+  const { permissions, isAdmin, currentUserId } = usePermissions();
+
+  // Personal task navigation items
+  const personalNavItems: NavItem[] = [
+    { id: 'my_tasks', icon: '👤', label: t('myTasks') || '我的任务', badge: myTasksCount },
+    { id: 'created_tasks', icon: '✏️', label: t('createdTasks') || '我创建的', badge: createdTasksCount },
+    { id: 'involved_tasks', icon: '💬', label: t('involvedTasks') || '我参与的', badge: involvedTasksCount },
+  ];
 
   const navItems: NavItem[] = [
     { id: 'tasks', icon: '📋', label: t('tasks') },
@@ -126,6 +140,35 @@ export default function Sidebar({
             </li>
           ))}
         </ul>
+
+        {/* Personal Tasks Section */}
+        {currentUserId && (
+          <>
+            <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2 px-3 mt-6">{t('myWork') || '我的工作'}</h3>
+            <ul className="space-y-1">
+              {personalNavItems.map(item => (
+                <li key={item.id}>
+                  <button
+                    onClick={() => setActiveView(item.id)}
+                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 ${
+                      activeView === item.id
+                        ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg shadow-indigo-500/30'
+                        : 'text-slate-300 hover:bg-slate-700/50 hover:text-white'
+                    }`}
+                  >
+                    <span className="text-lg">{item.icon}</span>
+                    <span className="font-medium flex-1 text-left">{item.label}</span>
+                    {item.badge !== undefined && item.badge > 0 && (
+                      <span className="bg-indigo-500 text-white text-xs font-bold px-2 py-0.5 rounded-full min-w-[20px] text-center">
+                        {item.badge}
+                      </span>
+                    )}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </>
+        )}
 
         <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2 px-3 mt-6">{t('manageCategories').split(' ')[0]}</h3>
         <ul className="space-y-1">

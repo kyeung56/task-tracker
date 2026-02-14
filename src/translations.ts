@@ -16,6 +16,10 @@ export const translations: Record<string, Translations> = {
     kanban: 'Kanban',
     calendar: 'Calendar',
     dashboard: 'Dashboard',
+    myTasks: 'My Tasks',
+    createdTasks: 'Created by Me',
+    involvedTasks: 'Involved',
+    myWork: 'My Work',
 
     // Stats
     total: 'Total',
@@ -57,6 +61,26 @@ export const translations: Record<string, Translations> = {
     tagsPlaceholder: 'e.g., frontend, urgent, bug',
     tagsHint: 'comma separated',
 
+    // Schedule Types
+    scheduleType: 'Schedule Type',
+    deadline: 'Deadline',
+    dailyHours: 'Daily Hours',
+    weeklyDays: 'Weekly Days',
+    monthlyDay: 'Monthly Day',
+    timeSlots: 'Time Slots',
+    addSlot: 'Add Slot',
+    selectDays: 'Select Days',
+    selectDayOfMonth: 'Select Day of Month',
+    timeForEachDay: 'Time for Each Day (Optional)',
+    startDate: 'Start Date',
+    endDate: 'End Date',
+    recurrence: 'Recurrence',
+    noRecurrence: 'None',
+    daily: 'Daily',
+    weekly: 'Weekly',
+    monthly: 'Monthly',
+    recurrenceEnd: 'Recurrence End Date',
+
     // Task Item
     overdueLabel: 'Overdue',
     dueLabel: 'Due',
@@ -88,6 +112,10 @@ export const translations: Record<string, Translations> = {
     addTaskForDate: '+ Add Task for this date',
     months: ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'],
     weekDays: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
+    monthView: 'Month',
+    weekView: 'Week',
+    dayView: 'Day',
+    taskCount: 'Tasks',
     priorityLegend: 'Priority:',
 
     // Dashboard
@@ -109,6 +137,12 @@ export const translations: Record<string, Translations> = {
     timeTracking: 'Time Tracking',
     statusBreakdown: 'Status Breakdown',
     efficiency: 'Efficiency',
+    // Trend Comparison
+    thisWeekVsLastWeek: 'This Week vs Last Week',
+    thisMonthVsLastMonth: 'This Month vs Last Month',
+    tasksCompleted: 'Tasks Completed',
+    tasksCreated: 'Tasks Created',
+    hoursLogged: 'Hours Logged',
     // Chart titles
     completionTrend: 'Completion Trend',
     teamWorkload: 'Team Workload',
@@ -162,6 +196,11 @@ export const translations: Record<string, Translations> = {
 
     // Time Tracker
     est: 'est.',
+    estHours: 'Est.',
+    dragTasksHere: 'Drag tasks here',
+    dragHint: 'Drag task cards to change status',
+    movedFrom: 'moved from',
+    movedTo: 'to',
 
     // Confirmations
     confirmDeleteTask: 'Are you sure you want to delete this task?',
@@ -200,6 +239,38 @@ export const translations: Record<string, Translations> = {
     showMore: 'Show more',
     showLess: 'Show less',
     reply: 'Reply',
+
+    // Notification Settings
+    notificationSettings: 'Notification Settings',
+    myPreferences: 'My Preferences',
+    emailConfig: 'Email Configuration',
+    taskAssignment: 'Task Assignment',
+    mentions: '@Mentions',
+    statusChanges: 'Status Changes',
+    dueDateReminders: 'Due Date Reminders',
+    inAppNotification: 'In-App Notification',
+    emailNotification: 'Email Notification',
+    dueSoonInApp: 'Due Soon (In-App)',
+    dueSoonEmail: 'Due Soon (Email)',
+    overdueInApp: 'Overdue (In-App)',
+    overdueEmail: 'Overdue (Email)',
+    remindDaysBefore: 'Days Before Due',
+    enableEmailNotifications: 'Enable Email Notifications',
+    enableEmailDesc: 'Turn on to send email notifications to users',
+    smtpSettings: 'SMTP Settings',
+    smtpHost: 'SMTP Host',
+    smtpPort: 'Port',
+    smtpUser: 'Username',
+    smtpPassword: 'Password',
+    useTLS: 'Use TLS/SSL',
+    senderSettings: 'Sender Settings',
+    fromEmail: 'From Email',
+    fromName: 'From Name',
+    testEmailAddress: 'Email to test',
+    testEmail: 'Test',
+    testEmailSent: 'Test email sent successfully!',
+    saving: 'Saving...',
+    sending: 'Sending...',
   },
 
   'zh-TW': {
@@ -217,6 +288,10 @@ export const translations: Record<string, Translations> = {
     kanban: '看板',
     calendar: '日曆',
     dashboard: '儀表板',
+    myTasks: '我的任務',
+    createdTasks: '我創建的',
+    involvedTasks: '我參與的',
+    myWork: '我的工作',
 
     // Stats
     total: '總計',
@@ -258,6 +333,26 @@ export const translations: Record<string, Translations> = {
     tagsPlaceholder: '例如：前端, 緊急, 錯誤',
     tagsHint: '以逗號分隔',
 
+    // Schedule Types
+    scheduleType: '時間安排類型',
+    deadline: '截止日期',
+    dailyHours: '每日時段',
+    weeklyDays: '每週天數',
+    monthlyDay: '每月某日',
+    timeSlots: '時間段',
+    addSlot: '添加時段',
+    selectDays: '選擇星期',
+    selectDayOfMonth: '選擇每月日期',
+    timeForEachDay: '每天時間（可選）',
+    startDate: '開始日期',
+    endDate: '結束日期',
+    recurrence: '重複',
+    noRecurrence: '無',
+    daily: '每天',
+    weekly: '每週',
+    monthly: '每月',
+    recurrenceEnd: '重複結束日期',
+
     // Task Item
     overdueLabel: '逾期',
     dueLabel: '到期',
@@ -289,6 +384,10 @@ export const translations: Record<string, Translations> = {
     addTaskForDate: '+ 為此日期新增任務',
     months: ['一月', '二月', '三月', '四月', '五月', '六月', '七月', '八月', '九月', '十月', '十一月', '十二月'],
     weekDays: ['日', '一', '二', '三', '四', '五', '六'],
+    monthView: '月',
+    weekView: '週',
+    dayView: '日',
+    taskCount: '任務數',
     priorityLegend: '優先級：',
 
     // Dashboard
@@ -310,6 +409,12 @@ export const translations: Record<string, Translations> = {
     timeTracking: '時間追蹤',
     statusBreakdown: '狀態分佈',
     efficiency: '效率',
+    // Trend Comparison
+    thisWeekVsLastWeek: '本週 vs 上週',
+    thisMonthVsLastMonth: '本月 vs 上月',
+    tasksCompleted: '完成任務',
+    tasksCreated: '新建任務',
+    hoursLogged: '記錄工時',
     // Chart titles
     completionTrend: '完成率趨勢',
     teamWorkload: '團隊工作量',
@@ -363,6 +468,12 @@ export const translations: Record<string, Translations> = {
 
     // Time Tracker
     est: '預估',
+    estHours: '預估',
+    logged: '已做',
+    dragTasksHere: '拖曳任務到此處',
+    dragHint: '拖曳任務卡片可更改狀態',
+    movedFrom: '已從',
+    movedTo: '移至',
 
     // Confirmations
     confirmDeleteTask: '確定要刪除此任務嗎？',
@@ -401,6 +512,38 @@ export const translations: Record<string, Translations> = {
     showMore: '顯示更多',
     showLess: '顯示較少',
     reply: '回覆',
+
+    // Notification Settings
+    notificationSettings: '通知設定',
+    myPreferences: '我的偏好',
+    emailConfig: '電子郵件設定',
+    taskAssignment: '任務指派',
+    mentions: '@提及',
+    statusChanges: '狀態變更',
+    dueDateReminders: '截止日期提醒',
+    inAppNotification: '應用程式內通知',
+    emailNotification: '電子郵件通知',
+    dueSoonInApp: '即將到期（應用程式內）',
+    dueSoonEmail: '即將到期（電子郵件）',
+    overdueInApp: '逾期（應用程式內）',
+    overdueEmail: '逾期（電子郵件）',
+    remindDaysBefore: '提前幾天提醒',
+    enableEmailNotifications: '啟用電子郵件通知',
+    enableEmailDesc: '開啟以向使用者發送電子郵件通知',
+    smtpSettings: 'SMTP 設定',
+    smtpHost: 'SMTP 主機',
+    smtpPort: '連接埠',
+    smtpUser: '使用者名稱',
+    smtpPassword: '密碼',
+    useTLS: '使用 TLS/SSL',
+    senderSettings: '寄件者設定',
+    fromEmail: '寄件者電子郵件',
+    fromName: '寄件者名稱',
+    testEmailAddress: '測試電子郵件地址',
+    testEmail: '測試',
+    testEmailSent: '測試郵件已成功發送！',
+    saving: '儲存中...',
+    sending: '發送中...',
   },
 
   'zh-CN': {
@@ -418,6 +561,10 @@ export const translations: Record<string, Translations> = {
     kanban: '看板',
     calendar: '日历',
     dashboard: '仪表板',
+    myTasks: '我的任务',
+    createdTasks: '我创建的',
+    involvedTasks: '我参与的',
+    myWork: '我的工作',
 
     // Stats
     total: '总计',
@@ -459,6 +606,26 @@ export const translations: Record<string, Translations> = {
     tagsPlaceholder: '例如：前端, 紧急, 错误',
     tagsHint: '以逗号分隔',
 
+    // Schedule Types
+    scheduleType: '时间安排类型',
+    deadline: '截止日期',
+    dailyHours: '每日时段',
+    weeklyDays: '每周天数',
+    monthlyDay: '每月某日',
+    timeSlots: '时间段',
+    addSlot: '添加时段',
+    selectDays: '选择星期',
+    selectDayOfMonth: '选择每月日期',
+    timeForEachDay: '每天时间（可选）',
+    startDate: '开始日期',
+    endDate: '结束日期',
+    recurrence: '重复',
+    noRecurrence: '无',
+    daily: '每天',
+    weekly: '每周',
+    monthly: '每月',
+    recurrenceEnd: '重复结束日期',
+
     // Task Item
     overdueLabel: '逾期',
     dueLabel: '到期',
@@ -490,6 +657,10 @@ export const translations: Record<string, Translations> = {
     addTaskForDate: '+ 为此日期添加任务',
     months: ['一月', '二月', '三月', '四月', '五月', '六月', '七月', '八月', '九月', '十月', '十一月', '十二月'],
     weekDays: ['日', '一', '二', '三', '四', '五', '六'],
+    monthView: '月',
+    weekView: '周',
+    dayView: '日',
+    taskCount: '任务数',
     priorityLegend: '优先级：',
 
     // Dashboard
@@ -564,6 +735,12 @@ export const translations: Record<string, Translations> = {
 
     // Time Tracker
     est: '预估',
+    estHours: '预估',
+    logged: '已做',
+    dragTasksHere: '拖拽任务到这里',
+    dragHint: '拖拽任务卡片可更改状态',
+    movedFrom: '已从',
+    movedTo: '移至',
 
     // Confirmations
     confirmDeleteTask: '确定要删除此任务吗？',
@@ -602,6 +779,38 @@ export const translations: Record<string, Translations> = {
     showMore: '显示更多',
     showLess: '显示较少',
     reply: '回复',
+
+    // Notification Settings
+    notificationSettings: '通知设置',
+    myPreferences: '我的偏好',
+    emailConfig: '电子邮件设置',
+    taskAssignment: '任务分配',
+    mentions: '@提及',
+    statusChanges: '状态变更',
+    dueDateReminders: '截止日期提醒',
+    inAppNotification: '应用内通知',
+    emailNotification: '电子邮件通知',
+    dueSoonInApp: '即将到期（应用内）',
+    dueSoonEmail: '即将到期（电子邮件）',
+    overdueInApp: '逾期（应用内）',
+    overdueEmail: '逾期（电子邮件）',
+    remindDaysBefore: '提前几天提醒',
+    enableEmailNotifications: '启用电子邮件通知',
+    enableEmailDesc: '开启以向用户发送电子邮件通知',
+    smtpSettings: 'SMTP 设置',
+    smtpHost: 'SMTP 主机',
+    smtpPort: '端口',
+    smtpUser: '用户名',
+    smtpPassword: '密码',
+    useTLS: '使用 TLS/SSL',
+    senderSettings: '发件人设置',
+    fromEmail: '发件人电子邮件',
+    fromName: '发件人名称',
+    testEmailAddress: '测试电子邮件地址',
+    testEmail: '测试',
+    testEmailSent: '测试邮件已成功发送！',
+    saving: '保存中...',
+    sending: '发送中...',
   }
 }
 

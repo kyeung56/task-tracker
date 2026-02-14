@@ -17,6 +17,7 @@ import notificationRoutes from './routes/notifications.js';
 import dashboardRoutes from './routes/dashboard.js';
 import uploadRoutes from './routes/uploads.js';
 import workflowRoutes from './routes/workflows.js';
+import schedulerService from './services/schedulerService.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -143,6 +144,30 @@ const PORT = process.env.PORT || 3001;
 server.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
   console.log(`WebSocket server ready`);
+
+  // Initialize scheduler service (due date reminders, email queue)
+  schedulerService.initialize().catch(err => {
+    console.error('Failed to initialize scheduler service:', err);
+  });
+});
+
+// Graceful shutdown
+process.on('SIGTERM', () => {
+  console.log('SIGTERM received, shutting down gracefully...');
+  schedulerService.shutdown();
+  server.close(() => {
+    console.log('Server closed');
+    process.exit(0);
+  });
+});
+
+process.on('SIGINT', () => {
+  console.log('SIGINT received, shutting down gracefully...');
+  schedulerService.shutdown();
+  server.close(() => {
+    console.log('Server closed');
+    process.exit(0);
+  });
 });
 
 export default app;

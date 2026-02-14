@@ -1,10 +1,19 @@
 import { useMemo } from 'react';
 import { useLanguage } from '../hooks/useLanguage';
+import { formatHours, formatHoursDecimal } from '../utils/helpers';
 import type { DashboardProps, Task, Category, TeamMember, DashboardTrend, DashboardAssigneeStat, DashboardCategoryStat, DashboardOverdueTrend } from '../types';
 import CompletionTrendChart from './dashboard/CompletionTrendChart';
 import WorkloadChart from './dashboard/WorkloadChart';
 import CategoryPieChart from './dashboard/CategoryPieChart';
 import OverdueTrendChart from './dashboard/OverdueTrendChart';
+
+interface PeriodComparison {
+  current: number;
+  previous: number;
+  change: number;
+  changePercent: number;
+  trend: 'up' | 'down' | 'same';
+}
 
 interface Stats {
   total: number;
@@ -25,6 +34,19 @@ interface Stats {
   assigneeStats: DashboardAssigneeStat[];
   categoryStats: DashboardCategoryStat[];
   overdueTrend: DashboardOverdueTrend[];
+  // Comparison data
+  weeklyComparison: {
+    completed: PeriodComparison;
+    created: PeriodComparison;
+    completionRate: PeriodComparison;
+    loggedHours: PeriodComparison;
+  };
+  monthlyComparison: {
+    completed: PeriodComparison;
+    created: PeriodComparison;
+    completionRate: PeriodComparison;
+    loggedHours: PeriodComparison;
+  };
 }
 
 interface StatCardProps {
@@ -50,8 +72,49 @@ function StatCard({ title, value, subtitle, gradient, icon }: StatCardProps) {
   );
 }
 
+interface ComparisonItemProps {
+  label: string;
+  data: PeriodComparison;
+  unit?: string;
+  showPercent?: boolean;
+}
+
+function ComparisonItem({ label, data, unit = '', showPercent = false, isHours = false }: ComparisonItemProps & { isHours?: boolean }) {
+  const { language } = useLanguage();
+  const trendColor = data.trend === 'up' ? 'text-emerald-600 bg-emerald-50' :
+                     data.trend === 'down' ? 'text-red-600 bg-red-50' :
+                     'text-slate-600 bg-slate-50';
+  const trendIcon = data.trend === 'up' ? '↑' : data.trend === 'down' ? '↓' : '→';
+
+  // Format the display value
+  const displayValue = showPercent
+    ? `${data.current}%`
+    : isHours
+      ? (formatHours(data.current, language) || '0m')
+      : `${data.current}${unit}`;
+
+  return (
+    <div className="flex items-center justify-between py-2">
+      <span className="text-sm text-slate-600">{label}</span>
+      <div className="flex items-center gap-3">
+        <span className="font-semibold text-slate-800">
+          {displayValue}
+        </span>
+        {data.change !== 0 && (
+          <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${trendColor}`}>
+            {trendIcon} {Math.abs(data.changePercent)}%
+          </span>
+        )}
+        {data.change === 0 && (
+          <span className="text-xs text-slate-400 px-2 py-0.5">-</span>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function Dashboard({ tasks, teamMembers }: DashboardProps) {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
 
   const stats = useMemo<Stats>(() => {
     const now = new Date();
@@ -155,6 +218,84 @@ export default function Dashboard({ tasks, teamMembers }: DashboardProps) {
       overdueTrend.push({ date: dateStr, overdueCount: overdueOnDay });
     }
 
+    // Calculate period comparisons
+    const calculateComparison = (current: number, previous: number): PeriodComparison => {
+      const change = current - previous;
+      const changePercent = previous > 0 ? Math.round((change / previous) * 100) : (current > 0 ? 100 : 0);
+      return {
+        current,
+        previous,
+        change,
+        changePercent,
+        trend: change > 0 ? 'up' : change < 0 ? 'down' : 'same',
+      };
+    };
+
+    // This week vs Last week
+    const thisWeekStart = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+    const lastWeekStart = new Date(today.getTime() - 14 * 24 * 60 * 60 * 1000);
+    const lastWeekEnd = new Date(today.getTime() - 8 * 24 * 60 * 60 * 1000);
+
+    const completedThisWeekCount = tasks.filter((task: Task) =>
+      task.completedAt && new Date(task.completedAt) >= thisWeekStart && new Date(task.completedAt) <= now
+    ).length;
+
+    const completedLastWeekCount = tasks.filter((task: Task) =>
+      task.completedAt && new Date(task.completedAt) >= lastWeekStart && new Date(task.completedAt) <= lastWeekEnd
+    ).length;
+
+    const createdThisWeekCount = tasks.filter((task: Task) =>
+      task.createdAt && new Date(task.createdAt) >= thisWeekStart && new Date(task.createdAt) <= now
+    ).length;
+
+    const createdLastWeekCount = tasks.filter((task: Task) =>
+      task.createdAt && new Date(task.createdAt) >= lastWeekStart && new Date(task.createdAt) <= lastWeekEnd
+    ).length;
+
+    const loggedHoursThisWeek = tasks
+      .filter((task: Task) => task.updatedAt && new Date(task.updatedAt) >= thisWeekStart)
+      .reduce((sum: number, task: Task) => sum + (task.loggedHours || 0), 0);
+
+    const loggedHoursLastWeek = tasks
+      .filter((task: Task) => task.updatedAt && new Date(task.updatedAt) >= lastWeekStart && new Date(task.updatedAt) <= lastWeekEnd)
+      .reduce((sum: number, task: Task) => sum + (task.loggedHours || 0), 0);
+
+    // This month vs Last month
+    const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const lastMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0);
+
+    const completedThisMonthCount = tasks.filter((task: Task) =>
+      task.completedAt && new Date(task.completedAt) >= thisMonthStart && new Date(task.completedAt) <= now
+    ).length;
+
+    const completedLastMonthCount = tasks.filter((task: Task) =>
+      task.completedAt && new Date(task.completedAt) >= lastMonthStart && new Date(task.completedAt) <= lastMonthEnd
+    ).length;
+
+    const createdThisMonthCount = tasks.filter((task: Task) =>
+      task.createdAt && new Date(task.createdAt) >= thisMonthStart && new Date(task.createdAt) <= now
+    ).length;
+
+    const createdLastMonthCount = tasks.filter((task: Task) =>
+      task.createdAt && new Date(task.createdAt) >= lastMonthStart && new Date(task.createdAt) <= lastMonthEnd
+    ).length;
+
+    const loggedHoursThisMonth = tasks
+      .filter((task: Task) => task.updatedAt && new Date(task.updatedAt) >= thisMonthStart)
+      .reduce((sum: number, task: Task) => sum + (task.loggedHours || 0), 0);
+
+    const loggedHoursLastMonth = tasks
+      .filter((task: Task) => task.updatedAt && new Date(task.updatedAt) >= lastMonthStart && new Date(task.updatedAt) <= lastMonthEnd)
+      .reduce((sum: number, task: Task) => sum + (task.loggedHours || 0), 0);
+
+    // Calculate rates
+    const thisWeekCompletionRate = createdThisWeekCount > 0 ? Math.round((completedThisWeekCount / createdThisWeekCount) * 100) : 0;
+    const lastWeekCompletionRate = createdLastWeekCount > 0 ? Math.round((completedLastWeekCount / createdLastWeekCount) * 100) : 0;
+
+    const thisMonthCompletionRate = createdThisMonthCount > 0 ? Math.round((completedThisMonthCount / createdThisMonthCount) * 100) : 0;
+    const lastMonthCompletionRate = createdLastMonthCount > 0 ? Math.round((completedLastMonthCount / createdLastMonthCount) * 100) : 0;
+
     return {
       total: tasks.length,
       completed: completed.length,
@@ -173,6 +314,20 @@ export default function Dashboard({ tasks, teamMembers }: DashboardProps) {
       assigneeStats,
       categoryStats,
       overdueTrend,
+      // Weekly comparison
+      weeklyComparison: {
+        completed: calculateComparison(completedThisWeekCount, completedLastWeekCount),
+        created: calculateComparison(createdThisWeekCount, createdLastWeekCount),
+        completionRate: calculateComparison(thisWeekCompletionRate, lastWeekCompletionRate),
+        loggedHours: calculateComparison(loggedHoursThisWeek, loggedHoursLastWeek),
+      },
+      // Monthly comparison
+      monthlyComparison: {
+        completed: calculateComparison(completedThisMonthCount, completedLastMonthCount),
+        created: calculateComparison(createdThisMonthCount, createdLastMonthCount),
+        completionRate: calculateComparison(thisMonthCompletionRate, lastMonthCompletionRate),
+        loggedHours: calculateComparison(loggedHoursThisMonth, loggedHoursLastMonth),
+      },
     };
   }, [tasks, teamMembers]);
 
@@ -224,6 +379,77 @@ export default function Dashboard({ tasks, teamMembers }: DashboardProps) {
             </svg>
           }
         />
+      </div>
+
+      {/* Trend Comparison Section */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        {/* Weekly Comparison */}
+        <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200">
+          <div className="flex items-center gap-2 mb-4">
+            <div className="w-8 h-8 bg-indigo-100 rounded-lg flex items-center justify-center">
+              <svg className="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+            </div>
+            <h3 className="text-lg font-semibold text-slate-800">
+              {language === 'en' ? 'This Week vs Last Week' : '本周 vs 上周'}
+            </h3>
+          </div>
+          <div className="space-y-1 divide-y divide-slate-100">
+            <ComparisonItem
+              label={language === 'en' ? 'Tasks Completed' : '完成任务'}
+              data={stats.weeklyComparison.completed}
+            />
+            <ComparisonItem
+              label={language === 'en' ? 'Tasks Created' : '新建任务'}
+              data={stats.weeklyComparison.created}
+            />
+            <ComparisonItem
+              label={language === 'en' ? 'Completion Rate' : '完成率'}
+              data={stats.weeklyComparison.completionRate}
+              showPercent
+            />
+            <ComparisonItem
+              label={language === 'en' ? 'Hours Logged' : '记录工时'}
+              data={stats.weeklyComparison.loggedHours}
+              isHours
+            />
+          </div>
+        </div>
+
+        {/* Monthly Comparison */}
+        <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200">
+          <div className="flex items-center gap-2 mb-4">
+            <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
+              <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+              </svg>
+            </div>
+            <h3 className="text-lg font-semibold text-slate-800">
+              {language === 'en' ? 'This Month vs Last Month' : '本月 vs 上月'}
+            </h3>
+          </div>
+          <div className="space-y-1 divide-y divide-slate-100">
+            <ComparisonItem
+              label={language === 'en' ? 'Tasks Completed' : '完成任务'}
+              data={stats.monthlyComparison.completed}
+            />
+            <ComparisonItem
+              label={language === 'en' ? 'Tasks Created' : '新建任务'}
+              data={stats.monthlyComparison.created}
+            />
+            <ComparisonItem
+              label={language === 'en' ? 'Completion Rate' : '完成率'}
+              data={stats.monthlyComparison.completionRate}
+              showPercent
+            />
+            <ComparisonItem
+              label={language === 'en' ? 'Hours Logged' : '记录工时'}
+              data={stats.monthlyComparison.loggedHours}
+              isHours
+            />
+          </div>
+        </div>
       </div>
 
       {/* By Assignee */}
@@ -295,11 +521,11 @@ export default function Dashboard({ tasks, teamMembers }: DashboardProps) {
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <span className="text-slate-600">{t('estimatedHours') || '预估时间'}</span>
-              <span className="font-semibold text-slate-800">{stats.estimatedHours}h</span>
+              <span className="font-semibold text-slate-800">{formatHours(stats.estimatedHours, language) || '0m'}</span>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-slate-600">{t('loggedHours') || '已记录时间'}</span>
-              <span className="font-semibold text-slate-800">{stats.loggedHours}h</span>
+              <span className="font-semibold text-slate-800">{formatHours(stats.loggedHours, language) || '0m'}</span>
             </div>
             <div className="pt-2 border-t border-slate-100">
               <div className="flex items-center justify-between text-sm">
